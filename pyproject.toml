@@ -5,10 +5,12 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.12.3"
 dependencies = [
-    "pydantic>=2.10.2",
     "scrapy-zyte-api>=0.25.1",
     "scrapy>=2.12.0",
     "python-dotenv>=1.0.1",
+    "coloredlogs>=15.0.1",
+    "scrapy-colorlog>=0.1.1",
+    "pydantic>=2.10.2",
 ]
 
 [tool.ruff]

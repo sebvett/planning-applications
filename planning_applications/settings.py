@@ -7,7 +7,12 @@
 #     https://docs.scrapy.org/en/latest/topics/downloader-middleware.html
 #     https://docs.scrapy.org/en/latest/topics/spider-middleware.html
 
+import scrapy_colorlog
+
 from planning_applications.utils import getenv
+
+scrapy_colorlog.install()
+
 
 BOT_NAME = "planning_applications"
 
@@ -102,3 +107,14 @@ ADDONS = {
 }
 
 ZYTE_API_EXPERIMENTAL_COOKIES_ENABLED = True
+
+# LOG_FILE = "log.txt"
+LOG_LEVEL = "INFO"
+
+FEEDS = {
+    "output.json": {
+        "format": "jsonlines",
+        "encoding": "utf8",
+        "indent": 4,
+    },
+}

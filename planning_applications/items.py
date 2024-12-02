@@ -3,144 +3,110 @@
 # See documentation in:
 # https://docs.scrapy.org/en/latest/topics/items.html
 
-import datetime
-import time
-from typing import List, Optional
+from datetime import datetime
+from typing import Optional
 
+import pydantic
 import scrapy
-from pydantic import BaseModel, Field
 
 
-class LpaName(str):
-    @classmethod
-    def __get_validators__(cls):
-        yield cls.validate
+class PlanningApplicationDetailsSummary(pydantic.BaseModel):
+    reference: Optional[str] = None
+    application_received: Optional[datetime] = None
+    application_validated: Optional[datetime] = None
+    address: Optional[str] = None
+    proposal: Optional[str] = None
+    appeal_status: Optional[str] = None
+    appeal_decision: Optional[str] = None
 
-    @classmethod
-    def validate(cls, v):
-        return str(v)
+
+class PlanningApplicationDetailsFurtherInformation(pydantic.BaseModel):
+    application_type: Optional[str] = None
+    expected_decision_level: Optional[str] = None
+    case_officer: Optional[str] = None
+    parish: Optional[str] = None
+    ward: Optional[str] = None
+    district_reference: Optional[str] = None
+    applicant_name: Optional[str] = None
+    applicant_address: Optional[str] = None
+    environmental_assessment_requested: Optional[bool] = None
 
 
-class PlanningApplicationsItem(scrapy.Item):
-    # define the fields for your item here like:
-    # name = scrapy.Field()
+class PlanningApplicationCommentsPublicComments(pydantic.BaseModel):
     pass
 
 
-class BaseItem(BaseModel):
-    meta_source_url: str
-    meta_type: str = ""
-    meta_id: str | List[str] = ""
-    meta_scraped_at: str = ""
-
-    def __init__(self, **data):
-        super().__init__(**data)
-        self.meta_type = self.get_meta_type()
-        self.meta_id = self.get_meta_id()
-        self.meta_scraped_at = data.get("meta_scraped_at", time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()))
-
-    def get_meta_type(self):
-        raise NotImplementedError
-
-    def get_meta_id(self):
-        raise NotImplementedError
+class PlanningApplicationCommentsConsulteeComments(pydantic.BaseModel):
+    pass
 
 
-class MediaItem(BaseItem):
+class PlanningApplicationDocuments(pydantic.BaseModel):
+    pass
+
+
+class PlanningApplicationRelatedCases(pydantic.BaseModel):
+    pass
+
+
+class PlanningApplicationMap(pydantic.BaseModel):
+    pass
+
+
+class PlanningApplication(pydantic.BaseModel):
+    details_summary: Optional[PlanningApplicationDetailsSummary] = None
+    details_further_information: Optional[PlanningApplicationDetailsFurtherInformation] = None
+    comments_public_comments: Optional[PlanningApplicationCommentsPublicComments] = None
+    comments_consultee_comments: Optional[PlanningApplicationCommentsConsulteeComments] = None
+    documents: Optional[PlanningApplicationDocuments] = None
+    related_cases: Optional[PlanningApplicationRelatedCases] = None
+    map: Optional[PlanningApplicationMap] = None
+
+
+# ---------------------------------------------------------------------------------------------------------------------
+
+
+class MediaItem(scrapy.Item):
     """
     A generic media item with a 'body' field for storing binary data.
     """
 
-    body: bytes
-
-    def __str__(self) -> str:
-        return self.__repr__()
-
-    def __repr__(self):
-        """Only include specific fields in the string representation."""
-        # exclude the 'body' field from the string representation
-        data = {k: v for k, v in self.model_dump().items() if k != "body"}
-        return f"{self.__class__.__name__}({data})"
+    body = scrapy.Field()
 
 
-class PlanningApplication(BaseItem):
-    def get_meta_type(self):
-        return "planning_application"
+class PlanningApplicationItem(scrapy.Item):
+    lpa = scrapy.Field()
+    reference = scrapy.Field()
+    application_received = scrapy.Field()
+    application_validated = scrapy.Field()
+    address = scrapy.Field()
+    proposal = scrapy.Field()
+    appeal_status = scrapy.Field()
+    appeal_decision = scrapy.Field()
+    application_type = scrapy.Field()
+    expected_decision_level = scrapy.Field()
+    case_officer = scrapy.Field()
+    parish = scrapy.Field()
+    ward = scrapy.Field()
+    district_reference = scrapy.Field()
+    applicant_name = scrapy.Field()
+    applicant_address = scrapy.Field()
+    environmental_assessment_requested = scrapy.Field()
 
-    def get_meta_id(self):
-        return [self.lpa, self.reference]
 
-    lpa: LpaName
-    reference: str
-
-    description: Optional[str] = None
-    address: Optional[str] = None
-    summary_url: Optional[str] = None
-    documents_url: Optional[str] = None
-
+class PlanningApplicationDocument(scrapy.Item):
+    lpa = scrapy.Field()
+    planning_application_reference = scrapy.Field()
+    url = scrapy.Field()
     # TODO: enum
-    type: Optional[str] = None
-    # TODO: enum
-    status: Optional[str] = None
-    # TODO: enum
-    decision: Optional[str] = None
-    # TODO: enum
-    appeal_decision: Optional[str] = None
-
-    applicant_name: Optional[str] = None
-    case_officer_name: Optional[str] = None
-    agent_name: Optional[str] = None
-    agent_company: Optional[str] = None
-    agent_address: Optional[str] = None
-
-    parish: Optional[str] = None
-    ward: Optional[str] = None
-    district_reference: Optional[str] = None
-
-    environmental_assessment_requested: Optional[bool] = None
-    was_delegated: Optional[bool] = None
-
-    received_date: Optional[datetime.date] = None
-    validated_date: Optional[datetime.date] = None
-    expired_date: Optional[datetime.date] = None
-    committee_date: Optional[datetime.date] = None
-    consultation_date: Optional[datetime.date] = None
-    consultation_expired_date: Optional[datetime.date] = None
-    determination_deadline_date: Optional[datetime.date] = None
-    decided_date: Optional[datetime.date] = None
-    permission_expired_date: Optional[datetime.date] = None
-    appealed_date: Optional[datetime.date] = None
+    document_reference = scrapy.Field()
+    metadata = scrapy.Field()
+    file_name = scrapy.Field()
+    content_hash = scrapy.Field()
+    mimetype = scrapy.Field()
+    body = scrapy.Field()
 
 
-class PlanningApplicationDocument(BaseItem):
-    def get_meta_type(self):
-        return "planning_application_document"
-
-    def get_meta_id(self):
-        return [self.lpa, self.planning_application_reference, self.url]
-
-    class Config:
-        arbitrary_types_allowed = True
-
-    lpa: LpaName
-    planning_application_reference: str
-    url: str
-    # TODO: enum
-    document_reference: Optional[str] = None
-    metadata: str
-    file_name: str
-    content_hash: str
-    mimetype: str
-    body: bytes = Field(repr=False)
-
-
-class PlanningApplicationPolygon(BaseItem):
-    def get_meta_type(self):
-        return "planning_application_polygon"
-
-    def get_meta_id(self):
-        return [self.lpa, self.reference]
-
-    lpa: LpaName
-    reference: str
-    polygon_geojson: str = Field(repr=False)
+class PlanningApplicationPolygon(scrapy.Item):
+    lpa = scrapy.Field()
+    reference = scrapy.Field()
+    polygon_geojson = scrapy.Field()

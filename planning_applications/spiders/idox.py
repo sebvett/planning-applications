@@ -2,13 +2,17 @@ import json
 import logging
 from datetime import date, datetime
 from enum import Enum
-from typing import Generator, List, Optional, cast
+from typing import Generator, List, Optional
 
 import scrapy
-from parsel import SelectorList
 from scrapy.http import HtmlResponse, TextResponse
 
-from planning_applications.items import PlanningApplication, PlanningApplicationDocument, PlanningApplicationPolygon
+from planning_applications.items import (
+    PlanningApplicationDetailsFurtherInformation,
+    PlanningApplicationDetailsSummary,
+    PlanningApplicationItem,
+    PlanningApplicationPolygon,
+)
 from planning_applications.settings import DEFAULT_DATE_FORMAT
 from planning_applications.spiders.base import BaseSpider
 
@@ -36,10 +40,9 @@ class IdoxSpider(BaseSpider):
     arcgis_url: Optional[str] = None
 
     # Date to start searching from, format: YYYY-MM-DD. Default: 1st January of the current year
-    start_date: date = DEFAULT_START_DATE
+    start_date: date = "2024-11-01"
     # Date to stop searching at, format: YYYY-MM-DD. Default: today
     end_date: date = DEFAULT_END_DATE
-    # Status to filter by
     filter_status: applicationStatus = applicationStatus.ALL
 
     def __init__(self, *args, **kwargs):
@@ -120,303 +123,283 @@ class IdoxSpider(BaseSpider):
             yield scrapy.Request(next_page_url, callback=self.parse_results)
 
     def _parse_single_result(self, result: scrapy.Selector, response: HtmlResponse):
-        meta_info = self._parse_single_result_meta_info(result.css(".metaInfo"))
-        summary_url = self._get_single_result_summary_url(result, response)
-        details_url = self._get_single_result_details_url(result, response)
-        documents_url = self._get_single_result_documents_url(result, response)
-        keyval = summary_url.split("keyVal=")[1].split("&")[0] or ""
-        description = result.css("a::text").get() or ""
-        address = result.css(".address::text").get() or ""
+        details_summary_url = self._get_single_result_details_summary_url(result, response)
+        details_further_information_url = self._get_single_result_details_further_information_url(result, response)
 
+        keyval = details_summary_url.split("keyVal=")[1].split("&")[0] or ""
         if keyval == "":
-            self.logger.error(f"Failed to parse keyval from {summary_url}, can't continue")
+            self.logger.error(f"Failed to parse keyval from {details_summary_url}, can't continue")
             return
 
         if self.should_scrape_application:
             self.applications_scraped += 1
 
-            yield PlanningApplication(
-                meta_source_url=response.url,
-                lpa=self.lpa,
-                reference=meta_info["reference"],
-                description=description.strip(),
-                address=address.strip(),
-                summary_url=summary_url,
-                documents_url=documents_url,
-                received_date=meta_info.get("received_date"),
-                validated_date=meta_info.get("validated_date"),
-                status=meta_info.get("status"),
+            meta = {
+                "keyval": keyval,
+                "original_response": response,
+                "limit": self.limit,
+                "applications_scraped": self.applications_scraped,
+            }
+
+            yield scrapy.Request(
+                details_summary_url,
+                callback=self.parse_details_summary_tab,
+                meta=meta,
+                errback=self.handle_error,
             )
 
             yield scrapy.Request(
-                details_url,
+                details_further_information_url,
                 callback=self.parse_details_further_information_tab,
-                meta={"application_reference": meta_info["reference"]},
+                meta=meta,
+                errback=self.handle_error,
             )
 
-        if self.should_scrape_document:
-            yield scrapy.Request(
-                documents_url,
-                callback=self.parse_documents_tab,
-                meta={"application_reference": meta_info["reference"]},
-            )
+            # if self.should_scrape_document:
+            #     yield scrapy.Request(
+            #         details_summary_url.replace("activeTab=summary", "activeTab=documents"),
+            #         callback=self.parse_documents_tab,
+            #         meta={"application_reference": details_summary.reference},
+            #     )
 
-        if self.should_scrape_comment:
-            # TODO: Implement comment scraping
-            pass
+            # if self.should_scrape_comment:
+            #     # TODO: Implement comment scraping
+            #     pass
 
-        self.logger.info(f"Scraping ArcGIS data for {keyval}")
+            # self.logger.info(f"Scraping ArcGIS data for {keyval}")
 
-        if self.should_scrape_polygon and self.arcgis_url:
-            url = (
-                self.arcgis_url
-                + "?f=geojson&returnGeometry=true&outFields=*&outSR=4326&where=KEYVAL%3D%27"
-                + keyval
-                + "%27"
-            )
+            # if self.should_scrape_polygon and self.arcgis_url:
+            #     url = (
+            #         self.arcgis_url
+            #         + "?f=geojson&returnGeometry=true&outFields=*&outSR=4326&where=KEYVAL%3D%27"
+            #         + keyval
+            #         + "%27"
+            #     )
 
-            yield scrapy.Request(
-                url,
-                callback=self.parse_idox_arcgis,
-                meta={"application_reference": meta_info["reference"], "keyval": keyval},
-            )
+            # yield scrapy.Request(
+            #     url,
+            #     callback=self.parse_idox_arcgis,
+            #     meta={"application_reference": details_summary.reference, "keyval": keyval},
+            # )
 
-    def parse_details_summary_tab(self, response: HtmlResponse):
+    # Details
+    # -------------------------------------------------------------------------
+
+    def _get_single_result_details_summary_url(self, result: scrapy.Selector, response: HtmlResponse) -> str:
+        return response.urljoin(result.css("a::attr(href)").get())
+
+    def parse_details_summary_tab(
+        self, response: HtmlResponse
+    ) -> Generator[PlanningApplicationDetailsSummary, None, None]:
         self.logger.info(f"Parsing results on {response.url} (parse_details_summary_tab)")
 
-        summary_tab = response.css("#tab_summary")[0]
+        details_summary = PlanningApplicationDetailsSummary()
+
         summary_table = response.css("#simpleDetailsTable")[0]
 
-        summary_url = summary_tab.attrib["href"]
-        reference = self._get_horizontal_table_value(summary_table, "Reference")
+        details_summary.reference = self._get_horizontal_table_value(summary_table, "Reference")
 
         application_received = self._get_horizontal_table_value(summary_table, "Application Received")
-        application_validated = self._get_horizontal_table_value(summary_table, "Application Validated")
-        address = self._get_horizontal_table_value(summary_table, "Address")
-        proposal = self._get_horizontal_table_value(summary_table, "Proposal")
-        status = self._get_horizontal_table_value(summary_table, "Status")
-        decision = self._get_horizontal_table_value(summary_table, "Decision")
-        decision_issued_date = self._get_horizontal_table_value(summary_table, "Decision Issued Date")
-        appeal_decision = self._get_horizontal_table_value(summary_table, "Appeal Decision")
-
-        if not summary_url or not reference:
-            self.logger.error(
-                f"Failed to parse summary tab on {response.url}. Need summary_url and reference, can't continue without"
-            )
-            return
-
-        # dates come in format "Thu 01 Jan 1970"
-        received_date, validated_date = None, None
         if application_received:
-            received_date = datetime.strptime(application_received, "%a %d %b %Y")
-        if application_validated:
-            validated_date = datetime.strptime(application_validated, "%a %d %b %Y")
-        if decision_issued_date:
-            decision_issued_date = datetime.strptime(decision_issued_date, "%a %d %b %Y")
+            details_summary.application_received = datetime.strptime(application_received, "%a %d %b %Y")
 
-        yield PlanningApplication(
-            meta_source_url=response.url,
-            lpa=self.lpa,
-            reference=reference,
-            description=proposal,
-            address=address,
-            summary_url=summary_url,
-            received_date=received_date,
-            validated_date=validated_date,
-            status=status,
-            decision=None if decision == "-" else decision,
-            decided_date=decision_issued_date or None,
-            appeal_decision=appeal_decision,
+        application_validated = self._get_horizontal_table_value(summary_table, "Application Validated")
+        if application_validated:
+            details_summary.application_validated = datetime.strptime(application_validated, "%a %d %b %Y")
+
+        details_summary.address = self._get_horizontal_table_value(summary_table, "Address")
+        details_summary.proposal = self._get_horizontal_table_value(summary_table, "Proposal")
+        details_summary.appeal_status = self._get_horizontal_table_value(summary_table, "Appeal Status")
+        details_summary.appeal_decision = self._get_horizontal_table_value(summary_table, "Appeal Decision")
+
+        meta = response.meta
+        meta["details_summary"] = details_summary
+
+        if "details_further_information" in meta:
+            yield self.create_planning_application_item(meta)
+        else:
+            yield scrapy.Request(
+                response.url,
+                callback=self.parse_details_further_information_tab,
+                meta=meta,
+                errback=self.handle_error,
+            )
+
+    def _get_single_result_details_further_information_url(
+        self, result: scrapy.Selector, response: HtmlResponse
+    ) -> str:
+        return self._get_single_result_details_summary_url(result, response).replace(
+            "activeTab=summary", "activeTab=details"
         )
 
-    def parse_details_further_information_tab(self, response: HtmlResponse):
+    def parse_details_further_information_tab(
+        self, response: HtmlResponse
+    ) -> Generator[PlanningApplicationDetailsFurtherInformation, None, None]:
         self.logger.info(f"Parsing results on {response.url} (parse_details_further_information_tab)")
 
         details_table = response.css("#applicationDetails")[0]
-        application_type = self._get_horizontal_table_value(details_table, "Application Type")
-        decision = self._get_horizontal_table_value(details_table, "Decision")
-        actual_decision_level = self._get_horizontal_table_value(details_table, "Actual Decision Level")
-        case_officer_name = self._get_horizontal_table_value(details_table, "Case Officer")
-        parish = self._get_horizontal_table_value(details_table, "Parish")
-        ward = self._get_horizontal_table_value(details_table, "Ward")
-        applicant_name = self._get_horizontal_table_value(details_table, "Applicant Name")
-        district_reference = self._get_horizontal_table_value(details_table, "District Reference")
-        agent_name = self._get_horizontal_table_value(details_table, "Agent Name")
-        agent_company = self._get_horizontal_table_value(details_table, "Agent Company Name")
-        agent_address = self._get_horizontal_table_value(details_table, "Agent Address")
 
-        environmental_assessment_requested = self._get_horizontal_table_value(
+        details_further_information = PlanningApplicationDetailsFurtherInformation()
+
+        details_further_information.application_type = self._get_horizontal_table_value(
+            details_table, "Application Type"
+        )
+        details_further_information.expected_decision_level = self._get_horizontal_table_value(
+            details_table, "Expected Decision Level"
+        )
+        details_further_information.case_officer = self._get_horizontal_table_value(details_table, "Case Officer")
+        details_further_information.parish = self._get_horizontal_table_value(details_table, "Parish")
+        details_further_information.ward = self._get_horizontal_table_value(details_table, "Ward")
+        details_further_information.applicant_name = self._get_horizontal_table_value(details_table, "Applicant Name")
+        details_further_information.district_reference = self._get_horizontal_table_value(
+            details_table, "District Reference"
+        )
+        details_further_information.applicant_name = self._get_horizontal_table_value(details_table, "Applicant Name")
+        details_further_information.applicant_address = self._get_horizontal_table_value(
+            details_table, "Applicant Address"
+        )
+        details_further_information.environmental_assessment_requested = self._get_horizontal_table_value(
             details_table, "Environmental Assessment Requested"
         )
 
-        yield PlanningApplication(
-            meta_source_url=response.url,
-            lpa=self.lpa,
-            reference=response.meta["application_reference"],
-            type=application_type,
-            decision=decision,
-            was_delegated=actual_decision_level == "Delegated Decision",
-            case_officer_name=case_officer_name,
-            parish=None if parish == "-" else parish,
-            ward=None if ward == "-" else ward,
-            applicant_name=applicant_name,
-            district_reference=district_reference,
-            agent_name=agent_name,
-            agent_company=agent_company,
-            agent_address=agent_address,
-            environmental_assessment_requested=environmental_assessment_requested == "Yes",
-        )
+        meta = response.meta
+        meta["details_further_information"] = details_further_information
 
-    def parse_details_contacts_tab(self, response: HtmlResponse):
-        pass
-
-    def parse_details_important_dates_tab(self, response: HtmlResponse):
-        pass
-
-    def _get_single_result_summary_url(self, result: scrapy.Selector, response: HtmlResponse):
-        return response.urljoin(result.css("a::attr(href)").get())
-
-    def _get_single_result_details_url(self, result: scrapy.Selector, response: HtmlResponse):
-        return self._get_single_result_summary_url(result, response).replace("activeTab=summary", "activeTab=details")
-
-    def _get_single_result_documents_url(self, result: scrapy.Selector, response: HtmlResponse):
-        return self._get_single_result_summary_url(result, response).replace(
-            "activeTab=summary", "activeTab=documents"
-        )
+        if "details_summary" in meta:
+            yield self.create_planning_application_item(meta, response)
+        else:
+            yield scrapy.Request(
+                response.url,
+                callback=self.parse_details_summary_tab,
+                meta=meta,
+                errback=self.handle_error,
+            )
 
     # Comments
     # -------------------------------------------------------------------------
 
-    def parse_comments_tab(self, response: HtmlResponse):
-        pass
+    def _get_single_result_comments_public_url(self, result: scrapy.Selector, response: HtmlResponse):
+        return self._get_single_result_details_summary_url(result, response).replace(
+            "activeTab=summary", "activeTab=neighbourComments"
+        )
 
-    def parse_comments_public_tab(self, response: HtmlResponse):
-        pass
-
-    def parse_comments_consultee_tab(self, response: HtmlResponse):
-        pass
-
-    # Constraints
-    # -------------------------------------------------------------------------
-
-    def parse_constraints_tab(self, response: HtmlResponse):
-        pass
+    def _get_single_result_comments_consultee_url(self, result: scrapy.Selector, response: HtmlResponse):
+        return self._get_single_result_details_summary_url(result, response).replace(
+            "activeTab=summary", "activeTab=consulteeComments"
+        )
 
     # Documents
     # -------------------------------------------------------------------------
 
-    def parse_documents_tab(self, response: HtmlResponse):
-        self.logger.info(f"Parsing documents on {response.url}")
-
-        table = response.css("#Documents")[0]
-        rows = table.xpath(".//tr")[1:]
-
-        self.logger.info(f"Found {len(rows)} documents on {response.url}")
-
-        for row in rows:
-            yield from self._parse_document_row(table, row, response)
-
-    PARSE_DOCUMENT_ROW_COLUMN_HEADERS = {
-        "date": "Date Published",
-        "category": "Document Type",
-        "description": "Description",
-        "document_reference": "Drawing Number",
-        "view_link": "View",
-    }
-
-    def _parse_document_row(self, table: scrapy.Selector, row: scrapy.Selector, response: HtmlResponse):
-        date_cell = get_cell_for_column_name(table, row, self.PARSE_DOCUMENT_ROW_COLUMN_HEADERS["date"])
-        category_cell = get_cell_for_column_name(table, row, self.PARSE_DOCUMENT_ROW_COLUMN_HEADERS["category"])
-        description_cell = get_cell_for_column_name(table, row, self.PARSE_DOCUMENT_ROW_COLUMN_HEADERS["description"])
-        view_link_cell = get_cell_for_column_name(table, row, self.PARSE_DOCUMENT_ROW_COLUMN_HEADERS["view_link"])
-
-        datestr = date_cell.xpath("./text()").get()
-        if not datestr:
-            self.logger.error(f"Failed to parse date from row {row}, can't continue")
-            return
-
-        date = datetime.strptime(datestr, "%d %b %Y").strftime("%Y-%m-%d")
-        category = category_cell.xpath("./text()").get()
-        description = description_cell.xpath("./text()").get()
-        url = response.urljoin(view_link_cell.xpath("./a/@href").get())
-
-        yield scrapy.Request(
-            url,
-            callback=self.process_parsed_file,
-            meta={
-                "original_response": response,
-                "date": date,
-                "category": category,
-                "description": description,
-                "url": url,
-            },
-            cookies=cast(dict, response.headers.getlist("Set-Cookie")),
+    def _get_single_result_documents_url(self, result: scrapy.Selector, response: HtmlResponse):
+        return self._get_single_result_details_summary_url(result, response).replace(
+            "activeTab=summary", "activeTab=documents"
         )
 
-    def _parse_single_result_meta_info(self, selector: SelectorList[scrapy.Selector]):
-        meta_info = {}
+    # Related Cases
+    # -------------------------------------------------------------------------
 
-        texts_selectors = selector.xpath("./text()")
-        ref_no = texts_selectors.re(r"Ref\. No:\s*(\S+)")
-        if ref_no:
-            meta_info["reference"] = ref_no[0]
+    def _get_single_result_related_cases_url(self, result: scrapy.Selector, response: HtmlResponse):
+        return self._get_single_result_details_summary_url(result, response).replace(
+            "activeTab=summary", "activeTab=relatedcases"
+        )
 
-        texts = texts_selectors.extract()
-        cleaned_texts = [t.strip() for t in texts if t.strip() != ""]
+    # Map
+    # -------------------------------------------------------------------------
 
-        for text in cleaned_texts:
-            try:
-                if "Received:" in text:
-                    meta_info["received_date"] = datetime.strptime(
-                        text.split(":", 1)[1].strip(), "%a %d %b %Y"
-                    ).strftime("%Y-%m-%d")
-                elif "Validated:" in text:
-                    meta_info["validated_date"] = datetime.strptime(
-                        text.split(":", 1)[1].strip(), "%a %d %b %Y"
-                    ).strftime("%Y-%m-%d")
-                elif "Status:" in text:
-                    meta_info["status"] = text.split(":", 1)[1].strip()
-            except ValueError as e:
-                self.logger.error(f"Failed to parse meta info from text: {text}", e)
-                continue
+    def _get_single_result_map_url(self, result: scrapy.Selector, response: HtmlResponse):
+        return self._get_single_result_details_summary_url(result, response).replace(
+            "activeTab=summary", "activeTab=map"
+        )
 
-        return meta_info
+    # -------------------------------------------------------------------------
+
+    # def parse_documents_tab(self, response: HtmlResponse):
+    #     self.logger.info(f"Parsing documents on {response.url}")
+
+    #     table = response.css("#Documents")[0]
+    #     rows = table.xpath(".//tr")[1:]
+
+    #     self.logger.info(f"Found {len(rows)} documents on {response.url}")
+
+    #     for row in rows:
+    #         yield from self._parse_document_row(table, row, response)
+
+    # PARSE_DOCUMENT_ROW_COLUMN_HEADERS = {
+    #     "date": "Date Published",
+    #     "category": "Document Type",
+    #     "description": "Description",
+    #     "document_reference": "Drawing Number",
+    #     "view_link": "View",
+    # }
+
+    # def _parse_document_row(self, table: scrapy.Selector, row: scrapy.Selector, response: HtmlResponse):
+    #     date_cell = get_cell_for_column_name(table, row, self.PARSE_DOCUMENT_ROW_COLUMN_HEADERS["date"])
+    #     category_cell = get_cell_for_column_name(table, row, self.PARSE_DOCUMENT_ROW_COLUMN_HEADERS["category"])
+    #     description_cell = get_cell_for_column_name(table, row, self.PARSE_DOCUMENT_ROW_COLUMN_HEADERS["description"])
+    #     view_link_cell = get_cell_for_column_name(table, row, self.PARSE_DOCUMENT_ROW_COLUMN_HEADERS["view_link"])
+
+    #     datestr = date_cell.xpath("./text()").get()
+    #     if not datestr:
+    #         self.logger.error(f"Failed to parse date from row {row}, can't continue")
+    #         return
+
+    #     date = datetime.strptime(datestr, "%d %b %Y").strftime("%Y-%m-%d")
+    #     category = category_cell.xpath("./text()").get()
+    #     description = description_cell.xpath("./text()").get()
+    #     url = response.urljoin(view_link_cell.xpath("./a/@href").get())
+
+    #     yield scrapy.Request(
+    #         url,
+    #         callback=self.process_parsed_file,
+    #         meta={
+    #             "original_response": response,
+    #             "date": date,
+    #             "category": category,
+    #             "description": description,
+    #             "url": url,
+    #         },
+    #         cookies=cast(dict, response.headers.getlist("Set-Cookie")),
+    #     )
 
     def _get_horizontal_table_value(self, table: scrapy.Selector, column_name: str):
-        return table.xpath(f".//th[contains(text(), '{column_name}')]/following-sibling::td/text()").get()
+        texts = table.xpath(f".//th[contains(text(), '{column_name}')]/following-sibling::td/text()").get()
+        if texts:
+            return "".join(texts).strip()
+        return None
 
-    def process_parsed_file(self, response: HtmlResponse):
-        # move this definition higher up to minimise no. of repeated calls
+    # def process_parsed_file(self, response: HtmlResponse):
+    #     # move this definition higher up to minimise no. of repeated calls
 
-        # TODO: Implement this
-        parsed_data = ""
+    #     # TODO: Implement this
+    #     parsed_data = ""
 
-        for item in parsed_data:
-            return self._create_planning_application_document(item, response)
+    #     for item in parsed_data:
+    #         return self._create_planning_application_document(item, response)
 
-    def _create_planning_application_document(
-        self, item, response: HtmlResponse
-    ) -> Generator[PlanningApplicationDocument, None, None]:
-        # Some of these document fields aren't included in the standard document definition
-        # (application_reference, category, description, date)
-        # They have been passed into storage via the metadata field instead
-        metadata = json.loads(item["metadata"])
-        metadata["application_reference"] = response.meta["original_response"].meta["application_reference"]
-        metadata["category"] = response.meta["category"]
-        metadata["description"] = response.meta["description"]
-        metadata["date"] = response.meta["date"]
+    # def _create_planning_application_document(
+    #     self, item, response: HtmlResponse
+    # ) -> Generator[PlanningApplicationDocument, None, None]:
+    #     # Some of these document fields aren't included in the standard document definition
+    #     # (application_reference, category, description, date)
+    #     # They have been passed into storage via the metadata field instead
+    #     metadata = json.loads(item["metadata"])
+    #     metadata["application_reference"] = response.meta["original_response"].meta["application_reference"]
+    #     metadata["category"] = response.meta["category"]
+    #     metadata["description"] = response.meta["description"]
+    #     metadata["date"] = response.meta["date"]
 
-        yield PlanningApplicationDocument(
-            meta_source_url=response.meta["original_response"].url,
-            planning_application_reference=metadata["application_reference"],
-            content_hash=item["content_hash"],
-            file_name=item["file_name"],
-            url=response.meta["url"],
-            metadata=json.dumps(metadata),
-            lpa=self.lpa,
-            mimetype=item["mimetype"],
-            body=item["body"],
-        )
+    #     yield PlanningApplicationDocument(
+    #         meta_source_url=response.meta["original_response"].url,
+    #         planning_application_reference=metadata["application_reference"],
+    #         content_hash=item["content_hash"],
+    #         file_name=item["file_name"],
+    #         url=response.meta["url"],
+    #         metadata=json.dumps(metadata),
+    #         lpa=self.name,
+    #         mimetype=item["mimetype"],
+    #         body=item["body"],
+    #     )
 
     # Related Cases
     # -------------------------------------------------------------------------
@@ -456,7 +439,7 @@ class IdoxSpider(BaseSpider):
 
         yield PlanningApplicationPolygon(
             meta_source_url=response.url,
-            lpa=self.lpa,
+            lpa=self.name,
             reference=response.meta["application_reference"],
             polygon_geojson=json.dumps(parsed_response["features"][0]),
         )
@@ -471,6 +454,49 @@ class IdoxSpider(BaseSpider):
     @property
     def formatted_end_date(self) -> str:
         return self.end_date.strftime("%d/%m/%Y")
+
+    def create_planning_application_item(
+        self, meta, response: HtmlResponse
+    ) -> Generator[PlanningApplicationItem, None, None]:
+        details_summary = meta["details_summary"]
+        details_further_information = meta["details_further_information"]
+
+        item = PlanningApplicationItem(
+            lpa=self.name,
+            reference=details_summary.reference,
+            application_received=details_summary.application_received,
+            application_validated=details_summary.application_validated,
+            address=details_summary.address,
+            proposal=details_summary.proposal,
+            appeal_status=details_summary.appeal_status,
+            appeal_decision=details_summary.appeal_decision,
+            application_type=details_further_information.application_type,
+            expected_decision_level=details_further_information.expected_decision_level,
+            case_officer=details_further_information.case_officer,
+            parish=details_further_information.parish,
+            ward=details_further_information.ward,
+            district_reference=details_further_information.district_reference,
+            applicant_name=details_further_information.applicant_name,
+            applicant_address=details_further_information.applicant_address,
+            environmental_assessment_requested=details_further_information.environmental_assessment_requested,
+        )
+
+        # Handle document scraping if needed
+        # if self.should_scrape_document:
+        #     documents_url = self._get_single_result_documents_url(meta["original_response"], response)
+        #     yield scrapy.Request(
+        #         documents_url,
+        #         callback=self.parse_documents_tab,
+        #         meta={"application_reference": details_summary.reference},
+        #     )
+
+        # Similarly, handle other scraping needs like comments, polygons, etc.
+
+        yield item
+
+    def handle_error(self, failure):
+        self.logger.error(f"Error processing request {failure.request}")
+        self.logger.error(f"Error details: {failure.value}")
 
 
 def get_cell_for_column_name(table: scrapy.Selector, row: scrapy.Selector, column_name: str) -> scrapy.Selector:

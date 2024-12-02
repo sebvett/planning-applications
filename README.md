@@ -3,5 +3,5 @@
 ## Usage
 
 ```bash
-scrapy crawl idox -a lpa=cambridge
+uv run scrapy crawl <LPA>
 ```
