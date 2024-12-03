@@ -4,7 +4,7 @@
 # https://docs.scrapy.org/en/latest/topics/items.html
 
 from datetime import datetime
-from typing import Optional
+from typing import List, Optional
 
 import pydantic
 import scrapy
@@ -40,8 +40,16 @@ class PlanningApplicationCommentsConsulteeComments(pydantic.BaseModel):
     pass
 
 
+class PlanningApplicationDocumentsDocument(pydantic.BaseModel):
+    date_published: Optional[datetime] = None
+    document_type: Optional[str] = None
+    drawing_number: Optional[str] = None
+    description: Optional[str] = None
+    url: Optional[str] = None
+
+
 class PlanningApplicationDocuments(pydantic.BaseModel):
-    pass
+    documents: Optional[List[PlanningApplicationDocumentsDocument]] = None
 
 
 class PlanningApplicationRelatedCases(pydantic.BaseModel):
@@ -65,14 +73,6 @@ class PlanningApplication(pydantic.BaseModel):
 # ---------------------------------------------------------------------------------------------------------------------
 
 
-class MediaItem(scrapy.Item):
-    """
-    A generic media item with a 'body' field for storing binary data.
-    """
-
-    body = scrapy.Field()
-
-
 class PlanningApplicationItem(scrapy.Item):
     lpa = scrapy.Field()
     reference = scrapy.Field()
@@ -91,19 +91,7 @@ class PlanningApplicationItem(scrapy.Item):
     applicant_name = scrapy.Field()
     applicant_address = scrapy.Field()
     environmental_assessment_requested = scrapy.Field()
-
-
-class PlanningApplicationDocument(scrapy.Item):
-    lpa = scrapy.Field()
-    planning_application_reference = scrapy.Field()
-    url = scrapy.Field()
-    # TODO: enum
-    document_reference = scrapy.Field()
-    metadata = scrapy.Field()
-    file_name = scrapy.Field()
-    content_hash = scrapy.Field()
-    mimetype = scrapy.Field()
-    body = scrapy.Field()
+    documents = scrapy.Field()
 
 
 class PlanningApplicationPolygon(scrapy.Item):
