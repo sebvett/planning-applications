@@ -1,11 +1,10 @@
-import json
 import logging
 from datetime import date, datetime
 from enum import Enum
-from typing import Generator, List, Optional, cast
+from typing import Generator, List, Optional
 
 import scrapy
-from scrapy.http import HtmlResponse, TextResponse
+from scrapy.http import HtmlResponse
 
 from planning_applications.items import (
     PlanningApplicationDetailsFurtherInformation,
@@ -278,23 +277,14 @@ class IdoxSpider(BaseSpider):
 
         yield from self.create_planning_application_item(meta)
 
-    PARSE_DOCUMENT_ROW_COLUMN_HEADERS = {
-        "date": "Date Published",
-        "category": "Document Type",
-        "description": "Description",
-        "document_reference": "Drawing Number",
-        "view_link": "View",
-    }
-
     def _parse_document_row(self, table: scrapy.Selector, row: scrapy.Selector, response: HtmlResponse):
         self.logger.info(f"Parsing document row on {response.url}")
 
-        date_cell = self.get_cell_for_column_name(table, row, self.PARSE_DOCUMENT_ROW_COLUMN_HEADERS["date"])
-        category_cell = self.get_cell_for_column_name(table, row, self.PARSE_DOCUMENT_ROW_COLUMN_HEADERS["category"])
-        description_cell = self.get_cell_for_column_name(
-            table, row, self.PARSE_DOCUMENT_ROW_COLUMN_HEADERS["description"]
-        )
-        view_link_cell = self.get_cell_for_column_name(table, row, self.PARSE_DOCUMENT_ROW_COLUMN_HEADERS["view_link"])
+        date_cell = self.get_cell_for_column_name(table, row, "Date Published")
+        category_cell = self.get_cell_for_column_name(table, row, "Document Type")
+        drawing_number_cell = self.get_cell_for_column_name(table, row, "Drawing Number")
+        description_cell = self.get_cell_for_column_name(table, row, "Description")
+        url_cell = self.get_cell_for_column_name(table, row, "View")
 
         datestr = date_cell.xpath("./text()").get()
         if not datestr:
@@ -303,11 +293,16 @@ class IdoxSpider(BaseSpider):
 
         date_published = datetime.strptime(datestr, "%d %b %Y").strftime("%Y-%m-%d")
         document_type = category_cell.xpath("./text()").get()
+        drawing_number = drawing_number_cell.xpath("./text()").get()
         description = description_cell.xpath("./text()").get()
-        url = response.urljoin(view_link_cell.xpath("./a/@href").get())
+        url = response.urljoin(url_cell.xpath("./a/@href").get())
 
         return PlanningApplicationDocumentsDocument(
-            date_published=date_published, document_type=document_type, description=description, url=url
+            date_published=date_published,
+            document_type=document_type,
+            drawing_number=drawing_number,
+            description=description,
+            url=url,
         )
 
     # Helpers
