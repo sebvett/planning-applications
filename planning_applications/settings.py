@@ -118,3 +118,8 @@ FEEDS = {
         "indent": 4,
     },
 }
+
+# These settings make the search breadth-first instead of depth-first
+DEPTH_PRIORITY = 1
+SCHEDULER_DISK_QUEUE = "scrapy.squeues.PickleFifoDiskQueue"
+SCHEDULER_MEMORY_QUEUE = "scrapy.squeues.FifoMemoryQueue"

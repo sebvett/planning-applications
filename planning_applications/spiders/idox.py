@@ -124,7 +124,6 @@ class IdoxSpider(BaseSpider):
 
     def _parse_single_result(self, result: scrapy.Selector, response: HtmlResponse):
         details_summary_url = self._get_single_result_details_summary_url(result, response)
-        details_further_information_url = self._get_single_result_details_further_information_url(result, response)
 
         keyval = details_summary_url.split("keyVal=")[1].split("&")[0] or ""
         if keyval == "":
@@ -144,13 +143,6 @@ class IdoxSpider(BaseSpider):
             yield scrapy.Request(
                 details_summary_url,
                 callback=self.parse_details_summary_tab,
-                meta=meta,
-                errback=self.handle_error,
-            )
-
-            yield scrapy.Request(
-                details_further_information_url,
-                callback=self.parse_details_further_information_tab,
                 meta=meta,
                 errback=self.handle_error,
             )
@@ -215,21 +207,11 @@ class IdoxSpider(BaseSpider):
         meta = response.meta
         meta["details_summary"] = details_summary
 
-        if "details_further_information" in meta:
-            yield self.create_planning_application_item(meta)
-        else:
-            yield scrapy.Request(
-                response.url,
-                callback=self.parse_details_further_information_tab,
-                meta=meta,
-                errback=self.handle_error,
-            )
-
-    def _get_single_result_details_further_information_url(
-        self, result: scrapy.Selector, response: HtmlResponse
-    ) -> str:
-        return self._get_single_result_details_summary_url(result, response).replace(
-            "activeTab=summary", "activeTab=details"
+        yield scrapy.Request(
+            response.url.replace("activeTab=summary", "activeTab=details"),
+            callback=self.parse_details_further_information_tab,
+            meta=meta,
+            errback=self.handle_error,
         )
 
     def parse_details_further_information_tab(
@@ -265,15 +247,7 @@ class IdoxSpider(BaseSpider):
         meta = response.meta
         meta["details_further_information"] = details_further_information
 
-        if "details_summary" in meta:
-            yield self.create_planning_application_item(meta, response)
-        else:
-            yield scrapy.Request(
-                response.url,
-                callback=self.parse_details_summary_tab,
-                meta=meta,
-                errback=self.handle_error,
-            )
+        yield from self.create_planning_application_item(meta)
 
     # Comments
     # -------------------------------------------------------------------------
@@ -404,45 +378,45 @@ class IdoxSpider(BaseSpider):
     # Related Cases
     # -------------------------------------------------------------------------
 
-    def parse_related_cases_tab(self, response: HtmlResponse):
-        pass
+    # def parse_related_cases_tab(self, response: HtmlResponse):
+    #     pass
 
     # ArcGIS / Map
     # -------------------------------------------------------------------------
 
-    def parse_idox_arcgis(self, response: TextResponse) -> Generator[PlanningApplicationPolygon, None, None]:
-        parsed_response = json.loads(response.text)
+    # def parse_idox_arcgis(self, response: TextResponse) -> Generator[PlanningApplicationPolygon, None, None]:
+    #     parsed_response = json.loads(response.text)
 
-        if parsed_response["features"] is None:
-            self.logger.error(f"No features found in response from {response.url}")
-            return
+    #     if parsed_response["features"] is None:
+    #         self.logger.error(f"No features found in response from {response.url}")
+    #         return
 
-        if len(parsed_response["features"]) == 0:
-            self.logger.error(f"No features found in response from {response.url}")
-            return
+    #     if len(parsed_response["features"]) == 0:
+    #         self.logger.error(f"No features found in response from {response.url}")
+    #         return
 
-        if parsed_response["features"][0]["geometry"] is None:
-            self.logger.error(f"No geometry found in response from {response.url}")
-            return
+    #     if parsed_response["features"][0]["geometry"] is None:
+    #         self.logger.error(f"No geometry found in response from {response.url}")
+    #         return
 
-        if parsed_response["features"][0]["properties"] is None:
-            self.logger.error(f"No geometry found in response from {response.url}")
-            return
+    #     if parsed_response["features"][0]["properties"] is None:
+    #         self.logger.error(f"No geometry found in response from {response.url}")
+    #         return
 
-        if parsed_response["features"][0]["properties"]["KEYVAL"] is None:
-            self.logger.error(f"No KEYVAL found in response from {response.url}")
-            return
+    #     if parsed_response["features"][0]["properties"]["KEYVAL"] is None:
+    #         self.logger.error(f"No KEYVAL found in response from {response.url}")
+    #         return
 
-        if parsed_response["features"][0]["properties"]["KEYVAL"] != response.meta["keyval"]:
-            self.logger.error(f"KEYVAL mismatch in response from {response.url}")
-            return
+    #     if parsed_response["features"][0]["properties"]["KEYVAL"] != response.meta["keyval"]:
+    #         self.logger.error(f"KEYVAL mismatch in response from {response.url}")
+    #         return
 
-        yield PlanningApplicationPolygon(
-            meta_source_url=response.url,
-            lpa=self.name,
-            reference=response.meta["application_reference"],
-            polygon_geojson=json.dumps(parsed_response["features"][0]),
-        )
+    #     yield PlanningApplicationPolygon(
+    #         meta_source_url=response.url,
+    #         lpa=self.name,
+    #         reference=response.meta["application_reference"],
+    #         polygon_geojson=json.dumps(parsed_response["features"][0]),
+    #     )
 
     # Helpers
     # -------------------------------------------------------------------------
@@ -455,9 +429,9 @@ class IdoxSpider(BaseSpider):
     def formatted_end_date(self) -> str:
         return self.end_date.strftime("%d/%m/%Y")
 
-    def create_planning_application_item(
-        self, meta, response: HtmlResponse
-    ) -> Generator[PlanningApplicationItem, None, None]:
+    def create_planning_application_item(self, meta) -> Generator[PlanningApplicationItem, None, None]:
+        self.logger.info(f"Creating planning application item with meta: {meta}")
+
         details_summary = meta["details_summary"]
         details_further_information = meta["details_further_information"]
 
@@ -493,18 +467,18 @@ class IdoxSpider(BaseSpider):
         # Similarly, handle other scraping needs like comments, polygons, etc.
 
         yield item
+        self.logger.info(f"Scraped item: {item}")
 
     def handle_error(self, failure):
-        self.logger.error(f"Error processing request {failure.request}")
-        self.logger.error(f"Error details: {failure.value}")
+        self.logger.error(f"Error processing request {failure.request}\nError details: {failure.value}")
 
 
-def get_cell_for_column_name(table: scrapy.Selector, row: scrapy.Selector, column_name: str) -> scrapy.Selector:
-    try:
-        column_index = int(
-            float(table.css(f"th:contains('{column_name}')").xpath("count(preceding-sibling::th)").get())
-        )
-    except ValueError:
-        raise ValueError(f"Column '{column_name}' not found in table")
+# def get_cell_for_column_name(table: scrapy.Selector, row: scrapy.Selector, column_name: str) -> scrapy.Selector:
+#     try:
+#         column_index = int(
+#             float(table.css(f"th:contains('{column_name}')").xpath("count(preceding-sibling::th)").get())
+#         )
+#     except ValueError:
+#         raise ValueError(f"Column '{column_name}' not found in table")
 
-    return row.xpath(f"./td[{column_index + 1}]")
+#     return row.xpath(f"./td[{column_index + 1}]")
