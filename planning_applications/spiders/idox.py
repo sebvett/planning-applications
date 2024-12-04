@@ -17,7 +17,7 @@ from planning_applications.spiders.base import BaseSpider
 
 logging.getLogger().setLevel(logging.WARNING)
 
-DEFAULT_START_DATE = datetime.fromisocalendar(datetime.now().year, 1, 1).date()
+DEFAULT_START_DATE = datetime.fromisocalendar(datetime.now().year, datetime.now().month, 1).date()
 DEFAULT_END_DATE = datetime.now().date()
 
 
@@ -39,7 +39,7 @@ class IdoxSpider(BaseSpider):
     arcgis_url: Optional[str] = None
 
     # Date to start searching from, format: YYYY-MM-DD. Default: 1st January of the current year
-    start_date: date = "2024-11-01"
+    start_date: date = DEFAULT_START_DATE
     # Date to stop searching at, format: YYYY-MM-DD. Default: today
     end_date: date = DEFAULT_END_DATE
     filter_status: applicationStatus = applicationStatus.ALL

@@ -11,6 +11,8 @@ dependencies = [
     "coloredlogs>=15.0.1",
     "scrapy-colorlog>=0.1.1",
     "pydantic>=2.10.2",
+    "mkdocs>=1.6.1",
+    "mkdocs-material>=9.5.47",
 ]
 
 [tool.ruff]

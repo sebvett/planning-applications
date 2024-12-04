@@ -1,0 +1,5 @@
+site_name: Planning Applications
+theme:
+  name: material
+  features:
+    - navigation.expand

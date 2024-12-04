@@ -1,4 +1,4 @@
-# planning-applications
+# Planning Applications
 
 ## Usage
 
