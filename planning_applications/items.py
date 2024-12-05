@@ -56,8 +56,9 @@ class PlanningApplicationRelatedCases(pydantic.BaseModel):
     pass
 
 
-class PlanningApplicationMap(pydantic.BaseModel):
-    pass
+class PlanningApplicationPolygon(pydantic.BaseModel):
+    reference: str
+    polygon_geojson: str = pydantic.Field(repr=False)
 
 
 class PlanningApplication(pydantic.BaseModel):
@@ -67,7 +68,7 @@ class PlanningApplication(pydantic.BaseModel):
     comments_consultee_comments: Optional[PlanningApplicationCommentsConsulteeComments] = None
     documents: Optional[PlanningApplicationDocuments] = None
     related_cases: Optional[PlanningApplicationRelatedCases] = None
-    map: Optional[PlanningApplicationMap] = None
+    polygon: Optional[PlanningApplicationPolygon] = None
 
 
 # ---------------------------------------------------------------------------------------------------------------------
@@ -92,9 +93,4 @@ class PlanningApplicationItem(scrapy.Item):
     applicant_address = scrapy.Field()
     environmental_assessment_requested = scrapy.Field()
     documents = scrapy.Field()
-
-
-class PlanningApplicationPolygon(scrapy.Item):
-    lpa = scrapy.Field()
-    reference = scrapy.Field()
-    polygon_geojson = scrapy.Field()
+    polygon = scrapy.Field()

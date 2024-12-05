@@ -1,24 +1,26 @@
+import json
 import logging
 from datetime import date, datetime
 from enum import Enum
 from typing import Generator, List, Optional
 
 import scrapy
-from scrapy.http import HtmlResponse
+from scrapy.http import HtmlResponse, TextResponse
 
 from planning_applications.items import (
     PlanningApplicationDetailsFurtherInformation,
     PlanningApplicationDetailsSummary,
     PlanningApplicationDocumentsDocument,
     PlanningApplicationItem,
+    PlanningApplicationPolygon,
 )
 from planning_applications.settings import DEFAULT_DATE_FORMAT
 from planning_applications.spiders.base import BaseSpider
 
 logging.getLogger().setLevel(logging.WARNING)
 
-DEFAULT_START_DATE = datetime.fromisocalendar(datetime.now().year, datetime.now().month, 1).date()
-DEFAULT_END_DATE = datetime.now().date()
+DEFAULT_START_DATE = datetime(datetime.now().year, datetime.now().month, 1)
+DEFAULT_END_DATE = datetime.now()
 
 
 class applicationStatus(Enum):
@@ -38,9 +40,7 @@ class IdoxSpider(BaseSpider):
     allowed_domains: List[str] = []
     arcgis_url: Optional[str] = None
 
-    # Date to start searching from, format: YYYY-MM-DD. Default: 1st January of the current year
     start_date: date = DEFAULT_START_DATE
-    # Date to stop searching at, format: YYYY-MM-DD. Default: today
     end_date: date = DEFAULT_END_DATE
     filter_status: applicationStatus = applicationStatus.ALL
 
@@ -122,7 +122,7 @@ class IdoxSpider(BaseSpider):
             yield scrapy.Request(next_page_url, callback=self.parse_results)
 
     def _parse_single_result(self, result: scrapy.Selector, response: HtmlResponse):
-        details_summary_url = self._get_single_result_details_summary_url(result, response)
+        details_summary_url = response.urljoin(result.css("a::attr(href)").get())
 
         keyval = details_summary_url.split("keyVal=")[1].split("&")[0] or ""
         if keyval == "":
@@ -146,38 +146,8 @@ class IdoxSpider(BaseSpider):
                 errback=self.handle_error,
             )
 
-            # if self.should_scrape_document:
-            #     yield scrapy.Request(
-            #         details_summary_url.replace("activeTab=summary", "activeTab=documents"),
-            #         callback=self.parse_documents_tab,
-            #         meta={"application_reference": details_summary.reference},
-            #     )
-
-            # if self.should_scrape_comment:
-            #     # TODO: Implement comment scraping
-            #     pass
-
-            # self.logger.info(f"Scraping ArcGIS data for {keyval}")
-
-            # if self.should_scrape_polygon and self.arcgis_url:
-            #     url = (
-            #         self.arcgis_url
-            #         + "?f=geojson&returnGeometry=true&outFields=*&outSR=4326&where=KEYVAL%3D%27"
-            #         + keyval
-            #         + "%27"
-            #     )
-
-            # yield scrapy.Request(
-            #     url,
-            #     callback=self.parse_idox_arcgis,
-            #     meta={"application_reference": details_summary.reference, "keyval": keyval},
-            # )
-
     # Details
     # -------------------------------------------------------------------------
-
-    def _get_single_result_details_summary_url(self, result: scrapy.Selector, response: HtmlResponse) -> str:
-        return response.urljoin(result.css("a::attr(href)").get())
 
     def parse_details_summary_tab(
         self, response: HtmlResponse
@@ -266,16 +236,27 @@ class IdoxSpider(BaseSpider):
 
         self.logger.info(f"Found {len(rows)} documents on {response.url}")
 
-        meta = response.meta
         documents = []
-
         for row in rows:
             documents.append(self._parse_document_row(table, row, response))
 
+        meta = response.meta
         meta["documents"] = documents
         self.logger.info(f"meta after parsing documents: {meta}")
 
-        yield from self.create_planning_application_item(meta)
+        arcgis_url = (
+            response.url.replace("activeTab=documents", "activeTab=map")
+            + "&f=geojson&returnGeometry=true&outFields=*&outSR=4326&where=KEYVAL%3D%27"
+            + meta["keyval"]
+            + "%27"
+        )
+
+        yield scrapy.Request(
+            arcgis_url,
+            callback=self.parse_idox_arcgis,
+            meta=meta,
+            errback=self.handle_error,
+        )
 
     def _parse_document_row(self, table: scrapy.Selector, row: scrapy.Selector, response: HtmlResponse):
         self.logger.info(f"Parsing document row on {response.url}")
@@ -304,6 +285,52 @@ class IdoxSpider(BaseSpider):
             description=description,
             url=url,
         )
+
+    # ArcGIS / Map
+    # -------------------------------------------------------------------------
+
+    def parse_idox_arcgis(self, response: TextResponse) -> Generator[PlanningApplicationPolygon, None, None]:
+        self.logger.info(f"Parsing ArcGIS on {response.url}")
+
+        print("*************************************")
+        print(response.text)
+        print("*************************************")
+        parsed_response = json.loads(response.text)
+
+        if parsed_response["features"] is None:
+            self.logger.error(f"No features found in response from {response.url}")
+            return
+
+        if len(parsed_response["features"]) == 0:
+            self.logger.error(f"No features found in response from {response.url}")
+            return
+
+        if parsed_response["features"][0]["geometry"] is None:
+            self.logger.error(f"No geometry found in response from {response.url}")
+            return
+
+        if parsed_response["features"][0]["properties"] is None:
+            self.logger.error(f"No geometry found in response from {response.url}")
+            return
+
+        if parsed_response["features"][0]["properties"]["KEYVAL"] is None:
+            self.logger.error(f"No KEYVAL found in response from {response.url}")
+            return
+
+        if parsed_response["features"][0]["properties"]["KEYVAL"] != response.meta["keyval"]:
+            self.logger.error(f"KEYVAL mismatch in response from {response.url}")
+            return
+
+        polygon = PlanningApplicationPolygon(
+            reference=response.meta["application_reference"],
+            polygon_geojson=json.dumps(parsed_response["features"][0]),
+        )
+
+        meta = response.meta
+        meta["polygon"] = polygon
+        self.logger.info(f"meta after parsing polygon: {meta}")
+
+        yield from self.create_planning_application_item(meta)
 
     # Helpers
     # -------------------------------------------------------------------------
@@ -340,6 +367,7 @@ class IdoxSpider(BaseSpider):
         details_summary = meta["details_summary"]
         details_further_information = meta["details_further_information"]
         documents = meta["documents"]
+        polygon = meta["polygon"]
 
         item = PlanningApplicationItem(
             lpa=self.name,
@@ -360,6 +388,7 @@ class IdoxSpider(BaseSpider):
             applicant_address=details_further_information.applicant_address,
             environmental_assessment_requested=details_further_information.environmental_assessment_requested,
             documents=documents,
+            polygon=polygon,
         )
 
         yield item
@@ -367,6 +396,7 @@ class IdoxSpider(BaseSpider):
 
     def handle_error(self, failure):
         self.logger.error(f"Error processing request {failure.request}\nError details: {failure.value}")
+        raise scrapy.exceptions.CloseSpider(reason="Error processing request")
 
     # Comments
     # -------------------------------------------------------------------------
@@ -391,45 +421,3 @@ class IdoxSpider(BaseSpider):
 
     # def parse_related_cases_tab(self, response: HtmlResponse):
     #     pass
-
-    # ArcGIS / Map
-    # -------------------------------------------------------------------------
-
-    # def _get_single_result_map_url(self, result: scrapy.Selector, response: HtmlResponse):
-    #     return self._get_single_result_details_summary_url(result, response).replace(
-    #         "activeTab=summary", "activeTab=map"
-    #     )
-
-    # def parse_idox_arcgis(self, response: TextResponse) -> Generator[PlanningApplicationPolygon, None, None]:
-    #     parsed_response = json.loads(response.text)
-
-    #     if parsed_response["features"] is None:
-    #         self.logger.error(f"No features found in response from {response.url}")
-    #         return
-
-    #     if len(parsed_response["features"]) == 0:
-    #         self.logger.error(f"No features found in response from {response.url}")
-    #         return
-
-    #     if parsed_response["features"][0]["geometry"] is None:
-    #         self.logger.error(f"No geometry found in response from {response.url}")
-    #         return
-
-    #     if parsed_response["features"][0]["properties"] is None:
-    #         self.logger.error(f"No geometry found in response from {response.url}")
-    #         return
-
-    #     if parsed_response["features"][0]["properties"]["KEYVAL"] is None:
-    #         self.logger.error(f"No KEYVAL found in response from {response.url}")
-    #         return
-
-    #     if parsed_response["features"][0]["properties"]["KEYVAL"] != response.meta["keyval"]:
-    #         self.logger.error(f"KEYVAL mismatch in response from {response.url}")
-    #         return
-
-    #     yield PlanningApplicationPolygon(
-    #         meta_source_url=response.url,
-    #         lpa=self.name,
-    #         reference=response.meta["application_reference"],
-    #         polygon_geojson=json.dumps(parsed_response["features"][0]),
-    #     )
