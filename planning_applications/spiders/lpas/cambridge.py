@@ -8,4 +8,4 @@ class CambridgeSpider(IdoxSpider):
     allowed_domains: List[str] = ["applications.greatercambridgeplanning.org"]
     base_url: str = "https://applications.greatercambridgeplanning.org"
     start_url: str = f"{base_url}/online-applications/search.do?action=advanced"
-    arcgis_url: str = "https://applications.greatercambridgeplanning.org/server/rest/services/LIVEUniformPA_Planning/FeatureServer/2/query"
+    arcgis_url: str = "https://applications.greatercambridgeplanning.org/server/rest/services/PALIVE/LIVEUniformPA_Planning/FeatureServer/2/query"

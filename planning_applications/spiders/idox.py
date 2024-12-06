@@ -245,8 +245,8 @@ class IdoxSpider(BaseSpider):
         self.logger.info(f"meta after parsing documents: {meta}")
 
         arcgis_url = (
-            response.url.replace("activeTab=documents", "activeTab=map")
-            + "&f=geojson&returnGeometry=true&outFields=*&outSR=4326&where=KEYVAL%3D%27"
+            self.arcgis_url
+            + "?f=geojson&returnGeometry=true&outFields=*&outSR=4326&where=KEYVAL%3D%27"
             + meta["keyval"]
             + "%27"
         )
@@ -292,9 +292,6 @@ class IdoxSpider(BaseSpider):
     def parse_idox_arcgis(self, response: TextResponse) -> Generator[PlanningApplicationPolygon, None, None]:
         self.logger.info(f"Parsing ArcGIS on {response.url}")
 
-        print("*************************************")
-        print(response.text)
-        print("*************************************")
         parsed_response = json.loads(response.text)
 
         if parsed_response["features"] is None:
@@ -322,7 +319,7 @@ class IdoxSpider(BaseSpider):
             return
 
         polygon = PlanningApplicationPolygon(
-            reference=response.meta["application_reference"],
+            reference=response.meta["details_summary"].reference,
             polygon_geojson=json.dumps(parsed_response["features"][0]),
         )
 
