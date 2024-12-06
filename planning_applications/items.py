@@ -62,6 +62,8 @@ class PlanningApplicationPolygon(pydantic.BaseModel):
 
 
 class PlanningApplication(pydantic.BaseModel):
+    lpa: str
+    idox_key_val: str
     details_summary: Optional[PlanningApplicationDetailsSummary] = None
     details_further_information: Optional[PlanningApplicationDetailsFurtherInformation] = None
     comments_public_comments: Optional[PlanningApplicationCommentsPublicComments] = None
@@ -76,6 +78,7 @@ class PlanningApplication(pydantic.BaseModel):
 
 class PlanningApplicationItem(scrapy.Item):
     lpa = scrapy.Field()
+    idox_key_val = scrapy.Field()
     reference = scrapy.Field()
     application_received = scrapy.Field()
     application_validated = scrapy.Field()

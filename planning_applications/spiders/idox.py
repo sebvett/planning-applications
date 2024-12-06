@@ -61,7 +61,7 @@ class IdoxSpider(BaseSpider):
 
     def start_requests(self):
         self.logger.info(
-            f"Searching for {self.name} applications between {self.start_date} and {self.end_date} with status {self.filter_status == applicationStatus.ALL and 'all' or self.filter_status.value}"
+            f"Searching for {self.name} applications between {self.start_date} and {self.end_date} with status {self.filter_status.value}"
         )
         yield scrapy.Request(self.start_url, callback=self.submit_form)
 
@@ -361,6 +361,7 @@ class IdoxSpider(BaseSpider):
     def create_planning_application_item(self, meta) -> Generator[PlanningApplicationItem, None, None]:
         self.logger.info(f"Creating planning application item with meta: {meta}")
 
+        idox_key_val = meta["keyval"]
         details_summary = meta["details_summary"]
         details_further_information = meta["details_further_information"]
         documents = meta["documents"]
@@ -368,6 +369,7 @@ class IdoxSpider(BaseSpider):
 
         item = PlanningApplicationItem(
             lpa=self.name,
+            idox_key_val=idox_key_val,
             reference=details_summary.reference,
             application_received=details_summary.application_received,
             application_validated=details_summary.application_validated,
