@@ -1,7 +1,6 @@
 import json
 import logging
 from datetime import date, datetime
-from enum import Enum
 from typing import Generator, List, Optional
 
 import scrapy
@@ -13,6 +12,7 @@ from planning_applications.items import (
     PlanningApplicationDocumentsDocument,
     PlanningApplicationItem,
     PlanningApplicationPolygon,
+    applicationStatus,
 )
 from planning_applications.settings import DEFAULT_DATE_FORMAT
 from planning_applications.spiders.base import BaseSpider
@@ -23,20 +23,8 @@ DEFAULT_START_DATE = datetime(datetime.now().year, datetime.now().month, 1)
 DEFAULT_END_DATE = datetime.now()
 
 
-class applicationStatus(Enum):
-    ALL = ""
-    APPEAL_DECIDED = "Appeal decided"
-    APPEAL_LODGED = "Appeal lodged"
-    AWAITING_DECISION = "Awaiting decision"
-    DECIDED = "Decided"
-    REGISTERED = "Registered"
-    UNKNOWN = "Unknown"
-    WITHDRAWN = "Withdrawn"
-
-
 class IdoxSpider(BaseSpider):
     start_url: str
-    base_url: str
     allowed_domains: List[str] = []
     arcgis_url: Optional[str] = None
 

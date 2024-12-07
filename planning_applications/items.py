@@ -4,10 +4,22 @@
 # https://docs.scrapy.org/en/latest/topics/items.html
 
 from datetime import datetime
+from enum import Enum
 from typing import List, Optional
 
 import pydantic
 import scrapy
+
+
+class applicationStatus(Enum):
+    ALL = ""
+    APPEAL_DECIDED = "Appeal decided"
+    APPEAL_LODGED = "Appeal lodged"
+    AWAITING_DECISION = "Awaiting decision"
+    DECIDED = "Decided"
+    REGISTERED = "Registered"
+    UNKNOWN = "Unknown"
+    WITHDRAWN = "Withdrawn"
 
 
 class PlanningApplicationDetailsSummary(pydantic.BaseModel):

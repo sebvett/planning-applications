@@ -61,6 +61,21 @@ If we click on one of those applications, (not on pictured in this case), we get
 
 `https://applications.greatercambridgeplanning.org/online-applications/applicationDetails.do?activeTab=details&keyVal=Q0YSEDDXIK800`
 
+##### Information
+
+- Application Type
+- Decision
+- Expected Decision Level
+- Case Officer
+- Parish
+- Ward
+- District Reference
+- Applicant Name
+- Agent Name
+- Agent Company Name
+- Agent Address
+- Environmental Assessment
+
 ##### Image
 
 ![Idox Application Details Further Information](images/idox_application_details_further_information.png)
@@ -70,6 +85,16 @@ If we click on one of those applications, (not on pictured in this case), we get
 ##### URL
 
 `https://applications.greatercambridgeplanning.org/online-applications/applicationDetails.do?activeTab=documents&keyVal=Q0YSEDDXIK800`
+
+##### Information
+
+For each document, we get:
+
+- Date Published
+- Document Type
+- Measure
+- Drawing Number
+- Description
 
 ##### Image
 
