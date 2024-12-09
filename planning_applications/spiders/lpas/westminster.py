@@ -27,7 +27,6 @@ class WestminsterSpider(IdoxSpider):
         }
 
     def _build_formrequest(self, response: HtmlResponse, formdata: dict):
-        yield scrapy.FormRequest.from_response(response,
-                                               formid="advancedSearchForm",
-                                               formdata=formdata,
-                                               callback=self.parse_results)
+        yield scrapy.FormRequest.from_response(
+            response, formid="advancedSearchForm", formdata=formdata, callback=self.parse_results
+        )
