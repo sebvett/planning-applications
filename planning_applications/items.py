@@ -41,7 +41,7 @@ class PlanningApplicationDetailsFurtherInformation(pydantic.BaseModel):
     district_reference: Optional[str] = None
     applicant_name: Optional[str] = None
     applicant_address: Optional[str] = None
-    environmental_assessment_requested: Optional[bool] = None
+    environmental_assessment_requested: Optional[str] = None
 
 
 class PlanningApplicationCommentsPublicComments(pydantic.BaseModel):
@@ -53,7 +53,7 @@ class PlanningApplicationCommentsConsulteeComments(pydantic.BaseModel):
 
 
 class PlanningApplicationDocumentsDocument(pydantic.BaseModel):
-    date_published: Optional[datetime] = None
+    date_published: Optional[str] = None
     document_type: Optional[str] = None
     drawing_number: Optional[str] = None
     description: Optional[str] = None

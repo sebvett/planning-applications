@@ -1,10 +1,14 @@
 import json
 import logging
 from datetime import date, datetime
-from typing import Generator, List, Optional
+from typing import Dict, Generator, List, Optional
 
 import scrapy
-from scrapy.http.response.html import HtmlResponse
+import scrapy.exceptions
+from parsel.selector import Selector
+from scrapy.http.request import Request
+from scrapy.http.response import Response
+from scrapy.http.response.text import TextResponse
 
 from planning_applications.items import (
     PlanningApplicationDetailsFurtherInformation,
@@ -47,13 +51,13 @@ class IdoxSpider(BaseSpider):
         if self.start_date > self.end_date:
             raise ValueError(f"start_date {self.start_date} must be earlier than to_date {self.end_date}")
 
-    def start_requests(self):
+    def start_requests(self) -> Generator[Request, None, None]:
         self.logger.info(
             f"Searching for {self.name} applications between {self.start_date} and {self.end_date} with status {self.filter_status.value}"
         )
-        yield scrapy.Request(self.start_url, callback=self.submit_form)
+        yield Request(self.start_url, callback=self.submit_form, errback=self.handle_error)
 
-    def submit_form(self, response: HtmlResponse):
+    def submit_form(self, response: Response) -> Generator[Request, None, None]:
         self.logger.info(f"Submitting search form on {response.url}")
 
         formdata = self._build_formdata(response)
@@ -63,19 +67,26 @@ class IdoxSpider(BaseSpider):
 
         yield from self._build_formrequest(response, formdata)
 
-    def _build_formdata(self, response: HtmlResponse):
+    def _build_formdata(self, response: Response) -> Dict[str, str]:
+        csrf = response.css("input[name='_csrf']::attr(value)").get()
+        if not csrf:
+            raise ValueError("Failed to find _csrf in response")
+
         return {
-            "_csrf": response.css("input[name='_csrf']::attr(value)").get(),
+            "_csrf": csrf,
             "caseAddressType": "Application",
             "date(applicationValidatedStart)": self.formatted_start_date,
             "date(applicationValidatedEnd)": self.formatted_end_date,
             "searchType": "Application",
         }
 
-    def _build_formrequest(self, response: HtmlResponse, formdata: dict):
+    def _build_formrequest(self, response: Response, formdata: dict):
+        if not isinstance(response, TextResponse):
+            raise ValueError("Response must be a TextResponse")
+
         yield scrapy.FormRequest.from_response(response, formdata=formdata, callback=self.parse_results)
 
-    def parse_results(self, response: HtmlResponse):
+    def parse_results(self, response: Response):
         message_box = response.css(".messagebox")
 
         if len(message_box) > 0:
@@ -113,10 +124,15 @@ class IdoxSpider(BaseSpider):
         if next_page:
             self.logger.info(f"Found next page at {next_page}")
             next_page_url = response.urljoin(next_page)
-            yield scrapy.Request(next_page_url, callback=self.parse_results)
+            yield Request(next_page_url, callback=self.parse_results)
 
-    def _parse_single_result(self, result: scrapy.Selector, response: HtmlResponse):
-        details_summary_url = response.urljoin(result.css("a::attr(href)").get())
+    def _parse_single_result(self, result: Selector, response: Response):
+        details_summary_url = result.css("a::attr(href)").get()
+        if not details_summary_url:
+            self.logger.error(f"Failed to parse details summary url from {result}, can't continue")
+            return
+
+        details_summary_url = response.urljoin(details_summary_url)
 
         keyval = details_summary_url.split("keyVal=")[1].split("&")[0] or ""
         if keyval == "":
@@ -133,7 +149,7 @@ class IdoxSpider(BaseSpider):
                 "applications_scraped": self.applications_scraped,
             }
 
-            yield scrapy.Request(
+            yield Request(
                 details_summary_url,
                 callback=self.parse_details_summary_tab,
                 meta=meta,
@@ -143,9 +159,7 @@ class IdoxSpider(BaseSpider):
     # Details
     # -------------------------------------------------------------------------
 
-    def parse_details_summary_tab(
-        self, response: HtmlResponse
-    ) -> Generator[PlanningApplicationDetailsSummary, None, None]:
+    def parse_details_summary_tab(self, response: Response) -> Generator[Request, None, None]:
         self.logger.info(f"Parsing results on {response.url} (parse_details_summary_tab)")
 
         details_summary = PlanningApplicationDetailsSummary()
@@ -171,21 +185,19 @@ class IdoxSpider(BaseSpider):
         meta["details_summary"] = details_summary
         self.logger.info(f"meta after parsing details summary: {meta}")
 
-        yield scrapy.Request(
+        yield Request(
             response.url.replace("activeTab=summary", "activeTab=details"),
             callback=self.parse_details_further_information_tab,
             meta=meta,
             errback=self.handle_error,
         )
 
-    def parse_details_further_information_tab(
-        self, response: HtmlResponse
-    ) -> Generator[PlanningApplicationDetailsFurtherInformation, None, None]:
+    def parse_details_further_information_tab(self, response: Response) -> Generator[Request, None, None]:
         self.logger.info(f"Parsing results on {response.url} (parse_details_further_information_tab)")
 
-        details_table = response.css("#applicationDetails")[0]
-
         details_further_information = PlanningApplicationDetailsFurtherInformation()
+
+        details_table = response.css("#applicationDetails")[0]
 
         details_further_information.application_type = self._get_horizontal_table_value(
             details_table, "Application Type"
@@ -212,7 +224,7 @@ class IdoxSpider(BaseSpider):
         meta["details_further_information"] = details_further_information
         self.logger.info(f"meta after parsing details further information: {meta}")
 
-        yield scrapy.Request(
+        yield Request(
             response.url.replace("activeTab=details", "activeTab=documents"),
             callback=self.parse_documents_tab,
             meta=meta,
@@ -222,7 +234,7 @@ class IdoxSpider(BaseSpider):
     # Documents
     # -------------------------------------------------------------------------
 
-    def parse_documents_tab(self, response: HtmlResponse):
+    def parse_documents_tab(self, response: Response):
         self.logger.info(f"Parsing documents on {response.url}")
 
         table = response.css("#Documents")[0]
@@ -238,39 +250,41 @@ class IdoxSpider(BaseSpider):
         meta["documents"] = documents
         self.logger.info(f"meta after parsing documents: {meta}")
 
-        arcgis_url = (
-            self.arcgis_url
-            + "?f=geojson&returnGeometry=true&outFields=*&outSR=4326&where=KEYVAL%3D%27"
-            + meta["keyval"]
-            + "%27"
-        )
+        if self.arcgis_url:
+            arcgis_url = (
+                self.arcgis_url
+                + "?f=geojson&returnGeometry=true&outFields=*&outSR=4326&where=KEYVAL%3D%27"
+                + meta["keyval"]
+                + "%27"
+            )
+            yield Request(arcgis_url, callback=self.parse_idox_arcgis, meta=meta, errback=self.handle_error)
+        else:
+            yield from self.create_planning_application_item(meta)
 
-        yield scrapy.Request(
-            arcgis_url,
-            callback=self.parse_idox_arcgis,
-            meta=meta,
-            errback=self.handle_error,
-        )
-
-    def _parse_document_row(self, table: scrapy.Selector, row: scrapy.Selector, response: HtmlResponse):
+    def _parse_document_row(self, table: Selector, row: Selector, response: Response):
         self.logger.info(f"Parsing document row on {response.url}")
+
+        url_cell = self.get_cell_for_column_name(table, row, "View")
+        url = url_cell.xpath("./a/@href").get()
+        if not url:
+            self.logger.error(f"Failed to parse url from row {row}, can't continue")
+            return
 
         date_cell = self.get_cell_for_column_name(table, row, "Date Published")
         category_cell = self.get_cell_for_column_name(table, row, "Document Type")
         drawing_number_cell = self.get_cell_for_column_name(table, row, "Drawing Number")
         description_cell = self.get_cell_for_column_name(table, row, "Description")
-        url_cell = self.get_cell_for_column_name(table, row, "View")
 
         datestr = date_cell.xpath("./text()").get()
         if not datestr:
             self.logger.error(f"Failed to parse date from row {row}, can't continue")
             return
 
+        url = response.urljoin(url)
         date_published = datetime.strptime(datestr, "%d %b %Y").strftime("%Y-%m-%d")
         document_type = category_cell.xpath("./text()").get()
         drawing_number = drawing_number_cell.xpath("./text()").get()
         description = description_cell.xpath("./text()").get()
-        url = response.urljoin(url_cell.xpath("./a/@href").get())
 
         return PlanningApplicationDocumentsDocument(
             date_published=date_published,
@@ -283,7 +297,7 @@ class IdoxSpider(BaseSpider):
     # ArcGIS / Map
     # -------------------------------------------------------------------------
 
-    def parse_idox_arcgis(self, response: TextResponse) -> Generator[PlanningApplicationPolygon, None, None]:
+    def parse_idox_arcgis(self, response: Response) -> Generator[PlanningApplicationItem, None, None]:
         self.logger.info(f"Parsing ArcGIS on {response.url}")
 
         parsed_response = json.loads(response.text)
@@ -334,19 +348,14 @@ class IdoxSpider(BaseSpider):
     def formatted_end_date(self) -> str:
         return self.end_date.strftime("%d/%m/%Y")
 
-    def get_cell_for_column_name(
-        self, table: scrapy.Selector, row: scrapy.Selector, column_name: str
-    ) -> scrapy.Selector:
-        try:
-            column_index = int(
-                float(table.css(f"th:contains('{column_name}')").xpath("count(preceding-sibling::th)").get())
-            )
-        except ValueError:
+    def get_cell_for_column_name(self, table: Selector, row: Selector, column_name: str) -> Selector:
+        value = table.css(f"th:contains('{column_name}')").xpath("count(preceding-sibling::th)").get()
+        if value is None:
             raise ValueError(f"Column '{column_name}' not found in table")
+        column_index = int(float(value))
+        return row.xpath(f"./td[{column_index + 1}]")[0]
 
-        return row.xpath(f"./td[{column_index + 1}]")
-
-    def _get_horizontal_table_value(self, table: scrapy.Selector, column_name: str):
+    def _get_horizontal_table_value(self, table: Selector, column_name: str):
         texts = table.xpath(f".//th[contains(text(), '{column_name}')]/following-sibling::td/text()").get()
         if texts:
             return "".join(texts).strip()
@@ -394,12 +403,12 @@ class IdoxSpider(BaseSpider):
     # Comments
     # -------------------------------------------------------------------------
 
-    # def _get_single_result_comments_public_url(self, result: scrapy.Selector, response: HtmlResponse):
+    # def _get_single_result_comments_public_url(self, result: Selector, response: Response):
     #     return self._get_single_result_details_summary_url(result, response).replace(
     #         "activeTab=summary", "activeTab=neighbourComments"
     #     )
 
-    # def _get_single_result_comments_consultee_url(self, result: scrapy.Selector, response: HtmlResponse):
+    # def _get_single_result_comments_consultee_url(self, result: Selector, response: Response):
     #     return self._get_single_result_details_summary_url(result, response).replace(
     #         "activeTab=summary", "activeTab=consulteeComments"
     #     )
@@ -407,10 +416,10 @@ class IdoxSpider(BaseSpider):
     # Related Cases
     # -------------------------------------------------------------------------
 
-    # def _get_single_result_related_cases_url(self, result: scrapy.Selector, response: HtmlResponse):
+    # def _get_single_result_related_cases_url(self, result: Selector, response: Response):
     #     return self._get_single_result_details_summary_url(result, response).replace(
     #         "activeTab=summary", "activeTab=relatedcases"
     #     )
 
-    # def parse_related_cases_tab(self, response: HtmlResponse):
+    # def parse_related_cases_tab(self, response: Response):
     #     pass
