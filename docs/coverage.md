@@ -103,22 +103,21 @@
 | Dundee                                             | Idox      | [Link](https://idoxwam.dundeecity.gov.uk/idoxpa-web)                                                              |
 | Durham                                             | Idox      | [Link](https://publicaccess.durham.gov.uk/online-applications/search.do?action=simple&searchType=Application)     |
 | Ealing                                             | Idox      | [Link](https://pam.ealing.gov.uk/online-applications)                                                             |
-| East Ayrshire                                      |           |                                                                                                                   |
-| East Cambridgeshire                                |           |                                                                                                                   |
-| East Devon                                         |           |                                                                                                                   |
-| East Dunbartonshire                                |           |                                                                                                                   |
-| East Hampshire                                     |           |                                                                                                                   |
-| East Hertfordshire                                 |           |                                                                                                                   |
-| East Lindsey                                       |           |                                                                                                                   |
-| East Lothian                                       |           |                                                                                                                   |
-| East Renfrewshire                                  |           |                                                                                                                   |
-| East Riding                                        |           |                                                                                                                   |
-| East Staffordshire                                 |           |                                                                                                                   |
-| East Suffolk                                       |           |                                                                                                                   |
-| East Sussex                                        |           |                                                                                                                   |
-| Eastbourne                                         |           |                                                                                                                   |
-| Edinburgh                                          |           |                                                                                                                   |
-| Enfield                                            |           |                                                                                                                   |
+| East Ayrshire                                      | Idox      | [Link](https://eplanning.east-ayrshire.gov.uk/online)                                                             |
+| East Cambridgeshire                                | Idox      | [Link](https://pa.eastcambs.gov.uk/online-applications)                                                           |
+| East Devon                                         | Idox      | [Link](https://planning.eastdevon.gov.uk/online-applications)                                                     |
+| East Dunbartonshire                                | Idox      | [Link](https://planning.eastdunbarton.gov.uk/online-applications)                                                 |
+| East Hampshire                                     | Idox      | [Link](https://planningpublicaccess.easthants.gov.uk/online-applications)                                         |
+| East Hertfordshire                                 | Idox      | [Link](https://publicaccess.eastherts.gov.uk/online-applications)                                                 |
+| East Lindsey                                       | Idox      | [Link](https://publicaccess.e-lindsey.gov.uk/online-applications)                                                 |
+| East Lothian                                       | Idox      | [Link](https://pa.eastlothian.gov.uk/online-applications)                                                         |
+| East Renfrewshire                                  | Idox      | [Link](https://ercbuildingstandards.eastrenfrewshire.gov.uk/buildingstandards)                                    |
+| East Riding                                        | Idox      | [Link](https://newplanningaccess.eastriding.gov.uk/newplanningaccess)                                             |
+| East Staffordshire                                 | Custom    | [Link](https://www.eaststaffsbc.gov.uk/Northgate/PlanningExplorer/KeywordsSearch.aspx)                            |
+| East Suffolk                                       | Idox      | [Link](https://publicaccess.eastsuffolk.gov.uk/online-applications)                                               |
+| East Sussex                                        | Custom    | [Link](https://apps.eastsussex.gov.uk/environment/planning/applications/register)                                 |
+| Edinburgh                                          | Idox      | [Link](https://citydev-portal.edinburgh.gov.uk/idoxpa-web)                                                        |
+| Enfield                                            | Idox      | [Link](https://planningandbuildingcontrol.enfield.gov.uk/online-applications)                                     |
 | Epping Forest                                      |           |                                                                                                                   |
 | Erewash                                            |           |                                                                                                                   |
 | Essex                                              |           |                                                                                                                   |
@@ -180,7 +179,7 @@
 | Leeds                                              |           |                                                                                                                   |
 | Leicester                                          |           |                                                                                                                   |
 | Leicestershire                                     |           |                                                                                                                   |
-| Lewes                                              |           |                                                                                                                   |
+| Lewes and Eastbourne                               | Idox      | https://planningpa.lewes-eastbourne.gov.uk/online-applications                                                    |
 | Lewisham                                           |           |                                                                                                                   |
 | Lichfield                                          |           |                                                                                                                   |
 | Lincoln                                            |           |                                                                                                                   |
@@ -283,7 +282,7 @@
 | Somerset                                           |           |                                                                                                                   |
 | South Cambridgeshire                               |           |                                                                                                                   |
 | South Derbyshire                                   |           |                                                                                                                   |
-| South Downs                                        |           |                                                                                                                   |
+| South Downs                                        | Idox      | https://planningpublicaccess.southdowns.gov.uk/online-applications                                                |
 | South Gloucestershire                              |           |                                                                                                                   |
 | South Hams                                         |           |                                                                                                                   |
 | South Holland                                      |           |                                                                                                                   |
