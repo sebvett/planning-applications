@@ -253,9 +253,6 @@ class IdoxSpider(BaseSpider):
         meta["documents"] = documents
         self.logger.info(f"meta after parsing documents: {meta}")
 
-        print("*************************************")
-        print(meta)
-        print("*************************************")
         if self.arcgis_url:
             arcgis_url = (
                 self.arcgis_url
