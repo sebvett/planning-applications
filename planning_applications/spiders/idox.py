@@ -250,6 +250,9 @@ class IdoxSpider(BaseSpider):
         meta["documents"] = documents
         self.logger.info(f"meta after parsing documents: {meta}")
 
+        print("*************************************")
+        print(meta)
+        print("*************************************")
         if self.arcgis_url:
             arcgis_url = (
                 self.arcgis_url
@@ -265,26 +268,23 @@ class IdoxSpider(BaseSpider):
         self.logger.info(f"Parsing document row on {response.url}")
 
         url_cell = self.get_cell_for_column_name(table, row, "View")
-        url = url_cell.xpath("./a/@href").get()
+        url = url_cell.xpath("./a/@href").get() if url_cell else None
         if not url:
             self.logger.error(f"Failed to parse url from row {row}, can't continue")
-            return
+            raise ValueError(f"Failed to parse url from row {row}, can't continue")
+        url = response.urljoin(url)
 
         date_cell = self.get_cell_for_column_name(table, row, "Date Published")
         category_cell = self.get_cell_for_column_name(table, row, "Document Type")
         drawing_number_cell = self.get_cell_for_column_name(table, row, "Drawing Number")
         description_cell = self.get_cell_for_column_name(table, row, "Description")
 
-        datestr = date_cell.xpath("./text()").get()
-        if not datestr:
-            self.logger.error(f"Failed to parse date from row {row}, can't continue")
-            return
+        datestr = date_cell.xpath("./text()").get() if date_cell else None
+        date_published = datetime.strptime(datestr, "%d %b %Y").strftime("%Y-%m-%d") if datestr else None
 
-        url = response.urljoin(url)
-        date_published = datetime.strptime(datestr, "%d %b %Y").strftime("%Y-%m-%d")
-        document_type = category_cell.xpath("./text()").get()
-        drawing_number = drawing_number_cell.xpath("./text()").get()
-        description = description_cell.xpath("./text()").get()
+        document_type = category_cell.xpath("./text()").get() if category_cell else None
+        drawing_number = drawing_number_cell.xpath("./text()").get() if drawing_number_cell else None
+        description = description_cell.xpath("./text()").get() if description_cell else None
 
         return PlanningApplicationDocumentsDocument(
             date_published=date_published,
@@ -348,10 +348,10 @@ class IdoxSpider(BaseSpider):
     def formatted_end_date(self) -> str:
         return self.end_date.strftime("%d/%m/%Y")
 
-    def get_cell_for_column_name(self, table: Selector, row: Selector, column_name: str) -> Selector:
+    def get_cell_for_column_name(self, table: Selector, row: Selector, column_name: str) -> Optional[Selector]:
         value = table.css(f"th:contains('{column_name}')").xpath("count(preceding-sibling::th)").get()
         if value is None:
-            raise ValueError(f"Column '{column_name}' not found in table")
+            return None
         column_index = int(float(value))
         return row.xpath(f"./td[{column_index + 1}]")[0]
 

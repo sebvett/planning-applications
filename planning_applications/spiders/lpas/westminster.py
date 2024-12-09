@@ -1,7 +1,8 @@
 from typing import List
 
 import scrapy
-from scrapy.http.response.html import HtmlResponse
+from scrapy.http.response import Response
+from scrapy.http.response.text import TextResponse
 
 from planning_applications.spiders.idox import IdoxSpider
 
@@ -14,7 +15,7 @@ class WestminsterSpider(IdoxSpider):
         "https://idoxpa.westminster.gov.uk/server/rest/services/PALIVE/LIVEUniformPA_Planning/FeatureServer/2/query"
     )
 
-    def _build_formdata(self, response: HtmlResponse):
+    def _build_formdata(self, response: Response):
         return {
             "org.apache.struts.taglib.html.TOKEN": response.css(
                 "input[name='org.apache.struts.taglib.html.TOKEN']::attr(value)"
@@ -26,7 +27,10 @@ class WestminsterSpider(IdoxSpider):
             "searchType": "Application",
         }
 
-    def _build_formrequest(self, response: HtmlResponse, formdata: dict):
+    def _build_formrequest(self, response: Response, formdata: dict):
+        if not isinstance(response, TextResponse):
+            raise ValueError("Response must be a TextResponse")
+
         yield scrapy.FormRequest.from_response(
             response, formid="advancedSearchForm", formdata=formdata, callback=self.parse_results
         )
