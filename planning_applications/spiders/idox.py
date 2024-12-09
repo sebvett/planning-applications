@@ -57,11 +57,11 @@ class IdoxSpider(BaseSpider):
         self.logger.info(f"Submitting search form on {response.url}")
 
         formdata = self._build_formdata(response)
-        
+
         if self.filter_status != applicationStatus.ALL:
             formdata["caseStatus"] = self.filter_status.value
 
-        yield scrapy.FormRequest.from_response(response, formdata=formdata, callback=self.parse_results)
+        yield from self._build_formrequest(response, formdata)
 
     def _build_formdata(self, response: HtmlResponse):
         return {
@@ -71,6 +71,9 @@ class IdoxSpider(BaseSpider):
             "date(applicationValidatedEnd)": self.formatted_end_date,
             "searchType": "Application",
         }
+
+    def _build_formrequest(self, response: HtmlResponse, formdata: dict):
+        yield scrapy.FormRequest.from_response(response, formdata=formdata, callback=self.parse_results)
 
     def parse_results(self, response: HtmlResponse):
         message_box = response.css(".messagebox")

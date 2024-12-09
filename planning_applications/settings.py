@@ -38,7 +38,8 @@ ROBOTSTXT_OBEY = False
 # CONCURRENT_REQUESTS_PER_IP = 16
 
 # Disable cookies (enabled by default)
-# COOKIES_ENABLED = False
+COOKIES_ENABLED = True
+# COOKIES_DEBUG = True
 
 # Disable Telnet Console (enabled by default)
 # TELNETCONSOLE_ENABLED = False
@@ -109,7 +110,7 @@ ADDONS = {
 ZYTE_API_EXPERIMENTAL_COOKIES_ENABLED = True
 
 # LOG_FILE = "log.txt"
-LOG_LEVEL = "INFO"
+LOG_LEVEL = "DEBUG"
 
 FEEDS = {
     "output.json": {
