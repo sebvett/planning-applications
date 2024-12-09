@@ -4,7 +4,7 @@ from datetime import date, datetime
 from typing import Generator, List, Optional
 
 import scrapy
-from scrapy.http import HtmlResponse, TextResponse
+from scrapy.http.response.html import HtmlResponse
 
 from planning_applications.items import (
     PlanningApplicationDetailsFurtherInformation,

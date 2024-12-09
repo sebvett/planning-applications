@@ -1,7 +1,7 @@
 from typing import List
 
 import scrapy
-from scrapy.http import HtmlResponse
+from scrapy.http.response.html import HtmlResponse
 
 from planning_applications.spiders.idox import IdoxSpider
 
