@@ -53,21 +53,24 @@ class IdoxSpider(BaseSpider):
         )
         yield scrapy.Request(self.start_url, callback=self.submit_form)
 
-    def submit_form(self, response):
+    def submit_form(self, response: HtmlResponse):
         self.logger.info(f"Submitting search form on {response.url}")
 
-        formdata = {
+        formdata = self._build_formdata(response)
+        
+        if self.filter_status != applicationStatus.ALL:
+            formdata["caseStatus"] = self.filter_status.value
+
+        yield scrapy.FormRequest.from_response(response, formdata=formdata, callback=self.parse_results)
+
+    def _build_formdata(self, response: HtmlResponse):
+        return {
             "_csrf": response.css("input[name='_csrf']::attr(value)").get(),
             "caseAddressType": "Application",
             "date(applicationValidatedStart)": self.formatted_start_date,
             "date(applicationValidatedEnd)": self.formatted_end_date,
             "searchType": "Application",
         }
-
-        if self.filter_status != applicationStatus.ALL:
-            formdata["caseStatus"] = self.filter_status.value
-
-        return [scrapy.FormRequest.from_response(response, formdata=formdata, callback=self.parse_results)]
 
     def parse_results(self, response: HtmlResponse):
         message_box = response.css(".messagebox")
