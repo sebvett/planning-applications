@@ -207,6 +207,9 @@ class IdoxSpider(BaseSpider):
         )
         details_further_information.case_officer = self._get_horizontal_table_value(details_table, "Case Officer")
         details_further_information.parish = self._get_horizontal_table_value(details_table, "Parish")
+        details_further_information.amenity_society = self._get_horizontal_table_value(
+            details_table, "Amenity Society"
+        )
         details_further_information.ward = self._get_horizontal_table_value(details_table, "Ward")
         details_further_information.applicant_name = self._get_horizontal_table_value(details_table, "Applicant Name")
         details_further_information.district_reference = self._get_horizontal_table_value(
@@ -384,6 +387,7 @@ class IdoxSpider(BaseSpider):
             expected_decision_level=details_further_information.expected_decision_level,
             case_officer=details_further_information.case_officer,
             parish=details_further_information.parish,
+            amenity_society=details_further_information.amenity_society,
             ward=details_further_information.ward,
             district_reference=details_further_information.district_reference,
             applicant_name=details_further_information.applicant_name,
