@@ -3,7 +3,6 @@ from typing import List
 import scrapy
 from scrapy.http import HtmlResponse
 
-from planning_applications.items import applicationStatus
 from planning_applications.spiders.idox import IdoxSpider
 
 
@@ -26,3 +25,9 @@ class WestminsterSpider(IdoxSpider):
             "date(applicationValidatedEnd)": self.formatted_end_date,
             "searchType": "Application",
         }
+
+    def _build_formrequest(self, response: HtmlResponse, formdata: dict):
+        yield scrapy.FormRequest.from_response(response,
+                                               formid="advancedSearchForm",
+                                               formdata=formdata,
+                                               callback=self.parse_results)
