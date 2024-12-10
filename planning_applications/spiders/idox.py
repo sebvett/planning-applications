@@ -1,5 +1,4 @@
 import json
-import logging
 from datetime import date, datetime
 from typing import Dict, Generator, List, Optional
 
@@ -20,8 +19,6 @@ from planning_applications.items import (
 )
 from planning_applications.settings import DEFAULT_DATE_FORMAT
 from planning_applications.spiders.base import BaseSpider
-
-logging.getLogger().setLevel(logging.WARNING)
 
 DEFAULT_START_DATE = datetime(datetime.now().year, datetime.now().month, 1)
 DEFAULT_END_DATE = datetime.now()
@@ -87,6 +84,8 @@ class IdoxSpider(BaseSpider):
         yield scrapy.FormRequest.from_response(response, formdata=formdata, callback=self.parse_results)
 
     def parse_results(self, response: Response):
+        self.logger.info(f"Parsing results from {response.url}")
+
         message_box = response.css(".messagebox")
 
         if len(message_box) > 0:
