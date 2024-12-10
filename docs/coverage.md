@@ -1,13 +1,13 @@
 # Coverage
 
-| LPA                                                | Scraper   | URL                                                                                                               |
-| :------------------------------------------------- | :-------- | :---------------------------------------------------------------------------------------------------------------- |
+| LPA                                                | Scraper   | URL                                                                                                               | Progress        |
+| :------------------------------------------------- | :-------- | :---------------------------------------------------------------------------------------------------------------- | :-------------- |
 | Aberdeen                                           | Idox      | [Link](https://publicaccess.aberdeencity.gov.uk/online-applications)                                              |
 | Aberdeenshire                                      | Idox      | [Link](https://upa.aberdeenshire.gov.uk/online-applications)                                                      |
 | Adur & Worthing                                    | Idox      | [Link](https://planning.adur-worthing.gov.uk/online-applications)                                                 |
 | Alderney                                           | -         | [Link](https://alderney.gov.gg/article/179172/Search-for-a-planning-application)                                  |
 | Amber Valley                                       | Custom    | [Link](https://www.ambervalley.gov.uk/planning/development-management/view-a-planning-application)                |
-| Anglesey                                           | Custom    | [Link](https://amg.gwynedd.llyw.cymru/planning)                                                                   |
+| Anglesey                                           | Custom    | [Link](https://ioacc.my.site.com/s/pr-english?language=en_GB&tabset-8996a=11112)                                  |
 | Angus                                              | Idox      | [Link](https://planning.angus.gov.uk/online-applications)                                                         |
 | Antrim & Newtownabbey                              | NIPP      | [Link](https://planningregister.planningsystemni.gov.uk)                                                          |
 | Ards and North Down                                | NIPP      | [Link](https://planningregister.planningsystemni.gov.uk)                                                          |
@@ -17,8 +17,8 @@
 | Ashfield                                           | Custom    | [Link](https://planning.ashfield.gov.uk/planning-applications/search-applications)                                |
 | Ashford                                            | Arcus     | [Link](https://ashfordboroughcouncil.my.site.com/pr/s/register-view?c__q=&c__r=Arcus_BE_Public_Register)          |
 | Babergh                                            | Idox      | [Link](https://planning.baberghmidsuffolk.gov.uk/online-applications)                                             |
-| Barking and Dagenham                               | Custom    | [Link](https://online-befirst.lbbd.gov.uk/planning/index.html?fa=search)                                          |
-| Barnet                                             | Idox      | [Link](https://publicaccess.barnet.gov.uk/online-applications)                                                    |
+| Barking and Dagenham                               | Custom 1  | [Link](https://online-befirst.lbbd.gov.uk/planning/index.html?fa=search)                                          |
+| Barnet                                             | Idox      | [Link](https://publicaccess.barnet.gov.uk/online-applications)                                                    | Getting objects |
 | Barnsley                                           | Custom    | [Link](https://planningexplorer.barnsley.gov.uk/Home/AdvanceSearch)                                               |
 | Basildon                                           | Idox      | [Link](https://planning.basildon.gov.uk/online-applications)                                                      |
 | Basingstoke                                        | Idox      | [Link](https://planning.basingstoke.gov.uk/online-applications)                                                   |
@@ -58,7 +58,7 @@
 | Caerphilly                                         | Idox      | [Link](https://publicaccess.caerphilly.gov.uk/PublicAccess)                                                       |
 | Cairngorms                                         | Idox      | [Link](https://www.eplanningcnpa.co.uk/online-applications)                                                       |
 | Calderdale                                         | Idox      | [Link](https://portal.calderdale.gov.uk/online-applications)                                                      |
-| Cambridge                                          | Idox      | [Link](https://applications.greatercambridgeplanning.org/online-applications)                                     |
+| Cambridge                                          | Idox      | [Link](https://applications.greatercambridgeplanning.org/online-applications)                                     | Getting objects |
 | Cambridgeshire                                     | Idox      | [Link](https://planning.cambridgeshire.gov.uk/online-applications)                                                |
 | Camden                                             | Northgate | [Link](https://planningrecords.camden.gov.uk/Northgate/PlanningExplorer/GeneralSearch.aspx)                       |
 | Cannock Chase                                      | Custom    | [Link](https://planning.agileapplications.co.uk/cannock/search-applications)                                      |
@@ -67,12 +67,12 @@
 | Castle Point                                       | Idox      | [Link](https://publicaccess.castlepoint.gov.uk/online-applications)                                               |
 | Causeway and Glens                                 | NIPP      | [Link](https://planningregister.planningsystemni.gov.uk)                                                          |
 | Central Bedfordshire                               | Custom    | [Link](https://plantech.centralbedfordshire.gov.uk/PLANTECH/DCWebPages/AcolNetCGI.gov)                            |
-| Ceredigion                                         | Custom    | [Link](https://ceredigion-online.tascomi.com/planning/index.html?fa=search)                                       |
+| Ceredigion                                         | Custom 1  | [Link](https://ceredigion-online.tascomi.com/planning/index.html?fa=search)                                       |
 | Charnwood                                          | Custom    | [Link](https://planningexplorer.charnwood.gov.uk)                                                                 |
 | Chelmsford                                         | Idox      | [Link](https://publicaccess.chelmsford.gov.uk/online-applications)                                                |
 | Cheltenham                                         | Idox      | [Link](https://publicaccess.cheltenham.gov.uk/online-applications)                                                |
 | Cherwell                                           | Custom    | [Link](https://planningregister.cherwell.gov.uk)                                                                  |
-| Cheshire East                                      | Custom    | [Link](https://pa.cheshireeast.gov.uk/planning/index.html?fa=search)                                              |
+| Cheshire East                                      | Custom 1  | [Link](https://pa.cheshireeast.gov.uk/planning/index.html?fa=search)                                              |
 | Cheshire West and Chester                          | Idox      | [Link](https://pa.cheshirewestandchester.gov.uk/online-applications)                                              |
 | Chesterfield                                       | Idox      | [Link](https://publicaccess.chesterfield.gov.uk/online-applications)                                              |
 | Chichester                                         | Idox      | [Link](https://publicaccess.chichester.gov.uk/online-applications)                                                |
@@ -82,15 +82,15 @@
 | Conwy                                              | Northgate | [Link](https://npe.conwy.gov.uk/Northgate/EnglishPlanningExplorer/generalsearch.aspx)                             |
 | Cornwall                                           | Idox      | [Link](https://planning.cornwall.gov.uk/online-applications)                                                      |
 | Cotswold                                           | Idox      | [Link](https://publicaccess.cotswold.gov.uk/online-applications)                                                  |
-| Coventry                                           | Custom    | [Link](https://planandregulatory.coventry.gov.uk/planning/index.html?fa=search)                                   |
+| Coventry                                           | Custom 1  | [Link](https://planandregulatory.coventry.gov.uk/planning/index.html?fa=search)                                   |
 | Crawley                                            | Custom    | [Link](https://planningregister.crawley.gov.uk/#AdvancedSearchTab)                                                |
 | Croydon                                            | Idox      | [Link](https://publicaccess3.croydon.gov.uk/online-applications)                                                  |
 | Cumberland (Allerdale)                             | Arcus     | [Link](https://cumberlandcouncil.my.site.com/pr3/s/register-view?c__r=Arcus_BE_Public_Register)                   |
 | Cumberland (Carlisle)                              | Idox      | [Link](https://publicaccess.carlisle.gov.uk/online-applications)                                                  |
 | Cumberland (Copeland)                              | Custom    | [Link](https://www.copeland.gov.uk/planning/application-search)                                                   |
 | Darlington                                         | Idox      | [Link](https://publicaccess.darlington.gov.uk/online-applications)                                                |
-| Dartmoor                                           | Custom    | [Link](https://dartmoor-online.tascomi.com/planning/index.html?fa=search)                                         |
-| Denbighshire                                       | Custom    | [Link](https://developments.denbighshire.gov.uk/planning/index.html?fa=search&language=en)                        |
+| Dartmoor                                           | Custom 1  | [Link](https://dartmoor-online.tascomi.com/planning/index.html?fa=search)                                         |
+| Denbighshire                                       | Custom 1  | [Link](https://developments.denbighshire.gov.uk/planning/index.html?fa=search&language=en)                        |
 | Derby                                              | Idox      | [Link](https://eplanning.derby.gov.uk/online-applications)                                                        |
 | Derbyshire Dales                                   | Idox      | [Link](https://planning.derbyshiredales.gov.uk/online-applications)                                               |
 | Derry and Strabane                                 | NIPP      | [Link](https://planningregister.planningsystemni.gov.uk)                                                          |
@@ -130,26 +130,24 @@
 | Flintshire                                         | Custom    | [Link](https://planning.agileapplications.co.uk/flintshire/search-applications)                                   |
 | Folkestone and Hythe                               | Arcus     | [Link](https://folkestonehythedc.my.site.com/PR3/s/be-register-view?c__r=Arcus_BE_Public_Register)                |
 | Forest of Dean                                     | Idox      | [Link](https://publicaccess.fdean.gov.uk/online-applications)                                                     |
-| Gateshead                                          |           |                                                                                                                   |
-| Gedling                                            |           |                                                                                                                   |
-| Glasgow                                            |           |                                                                                                                   |
-| Gloucester                                         |           |                                                                                                                   |
-| Gloucestershire                                    |           |                                                                                                                   |
-| Gosport                                            |           |                                                                                                                   |
-| Gravesham                                          |           |                                                                                                                   |
-| Greater Manchester                                 |           |                                                                                                                   |
-| Greenwich                                          |           |                                                                                                                   |
-| Guernsey                                           |           |                                                                                                                   |
-| Guildford                                          |           |                                                                                                                   |
-| Gwynedd                                            |           |                                                                                                                   |
-| Hackney                                            |           |                                                                                                                   |
-| Halton                                             |           |                                                                                                                   |
-| Hammersmith and Fulham                             |           |                                                                                                                   |
-| Hampshire                                          |           |                                                                                                                   |
-| Harborough                                         |           |                                                                                                                   |
-| Haringey                                           |           |                                                                                                                   |
-| Harlow                                             |           |                                                                                                                   |
-| Harrow                                             |           |                                                                                                                   |
+| Gateshead                                          | Idox      | [Link](https://public.gateshead.gov.uk/online-applications)                                                       |
+| Gedling                                            | Idox      | [Link](https://pawam.gedling.gov.uk/online-applications)                                                          |
+| Glasgow                                            | Idox      | [Link](https://publicaccess.glasgow.gov.uk/online-applications)                                                   |
+| Gloucester                                         | Idox      | [Link](https://publicaccess.gloucester.gov.uk/online-applications)                                                |
+| Gloucestershire                                    | Idox      | [Link](https://planning.gloucestershire.gov.uk/publicaccess)                                                      |
+| Gosport                                            | Idox      | [Link](https://publicaccess.gosport.gov.uk/online-applications)                                                   |
+| Gravesham                                          | Idox      | [Link](https://plan.gravesham.gov.uk/online-applications)                                                         |
+| Greenwich                                          | Idox      | [Link](https://planning.royalgreenwich.gov.uk/online-applications)                                                |
+| Guernsey                                           | Custom    | [Link](http://planningexplorer.gov.gg/portal/servlets/ApplicationSearchServlet)                                   |
+| Guildford                                          | Idox      | [Link](https://publicaccess.guildford.gov.uk/online-applications)                                                 |
+| Gwynedd                                            | Custom 1  | [Link](https://amg.gwynedd.llyw.cymru/planning/index.html?language=en&fa=search)                                  |
+| Hackney                                            | Custom 1  | [Link](https://developmentandhousing.hackney.gov.uk/planning/index.html?fa=search)                                |
+| Halton                                             | Idox      | [Link](https://pa.halton.gov.uk/online-applications)                                                              |
+| Hammersmith and Fulham                             | Idox      | [Link](https://public-access.lbhf.gov.uk/online-applications)                                                     |
+| Harborough                                         | Idox      | [Link](https://pa2.harborough.gov.uk/online-applications)                                                         |
+| Haringey                                           | Arcus     | [Link](https://publicregister.haringey.gov.uk/pr/s/register-view?c__r=Arcus_BE_Public_Register)                   |
+| Harlow                                             | Idox      | [Link](https://planningonline.harlow.gov.uk/online-applications)                                                  |
+| Harrow                                             | Custom 1  | [Link](https://planningsearch.harrow.gov.uk/planning/index.html?fa=search)                                        |
 | Hart                                               |           |                                                                                                                   |
 | Hartlepool                                         |           |                                                                                                                   |
 | Hastings                                           |           |                                                                                                                   |
@@ -179,7 +177,7 @@
 | Leeds                                              |           |                                                                                                                   |
 | Leicester                                          |           |                                                                                                                   |
 | Leicestershire                                     |           |                                                                                                                   |
-| Lewes and Eastbourne                               | Idox      | https://planningpa.lewes-eastbourne.gov.uk/online-applications                                                    |
+| Lewes and Eastbourne                               | Idox      | [Link](https://planningpa.lewes-eastbourne.gov.uk/online-applications)                                            |
 | Lewisham                                           |           |                                                                                                                   |
 | Lichfield                                          |           |                                                                                                                   |
 | Lincoln                                            |           |                                                                                                                   |
@@ -191,7 +189,7 @@
 | Maidstone                                          |           |                                                                                                                   |
 | Maldon                                             |           |                                                                                                                   |
 | Malvern Hills                                      |           |                                                                                                                   |
-| Manchester                                         |           |                                                                                                                   |
+| Manchester                                         | Idox      | [Link](https://pa.manchester.gov.uk/online-applications)                                                          |
 | Mansfield                                          |           |                                                                                                                   |
 | Medway                                             |           |                                                                                                                   |
 | Melton                                             |           |                                                                                                                   |
@@ -282,7 +280,7 @@
 | Somerset                                           |           |                                                                                                                   |
 | South Cambridgeshire                               |           |                                                                                                                   |
 | South Derbyshire                                   |           |                                                                                                                   |
-| South Downs                                        | Idox      | https://planningpublicaccess.southdowns.gov.uk/online-applications                                                |
+| South Downs                                        | Idox      | [Link](https://planningpublicaccess.southdowns.gov.uk/online-applications)                                        |
 | South Gloucestershire                              |           |                                                                                                                   |
 | South Hams                                         |           |                                                                                                                   |
 | South Holland                                      |           |                                                                                                                   |
@@ -359,7 +357,7 @@
 | West Sussex                                        |           |                                                                                                                   |
 | West Yorkshire                                     |           |                                                                                                                   |
 | Western Isles                                      |           |                                                                                                                   |
-| Westminster                                        | Idox      | [Link](https://idoxpa.westminster.gov.uk/online-applications)                                                     |
+| Westminster                                        | Idox      | [Link](https://idoxpa.westminster.gov.uk/online-applications)                                                     | Getting objects |
 | Westmorland and Furness                            |           |                                                                                                                   |
 | Wiltshire                                          |           |                                                                                                                   |
 | Winchester                                         |           |                                                                                                                   |

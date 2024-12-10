@@ -9,11 +9,10 @@ from planning_applications.spiders.idox import IdoxSpider
 
 class WestminsterSpider(IdoxSpider):
     name: str = "westminster"
-    allowed_domains: List[str] = ["idoxpa.westminster.gov.uk"]
-    start_url: str = "https://idoxpa.westminster.gov.uk/online-applications/search.do?action=advanced"
-    arcgis_url: str = (
-        "https://idoxpa.westminster.gov.uk/server/rest/services/PALIVE/LIVEUniformPA_Planning/FeatureServer/2/query"
-    )
+    domain: str = "idoxpa.westminster.gov.uk"
+    allowed_domains: List[str] = [domain]
+    start_url: str = f"https://{domain}/online-applications/search.do?action=advanced"
+    arcgis_url: str = f"https://{domain}/server/rest/services/PALIVE/LIVEUniformPA_Planning/FeatureServer/2/query"
 
     def _build_formdata(self, response: Response):
         return {

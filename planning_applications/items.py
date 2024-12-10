@@ -104,6 +104,7 @@ class PlanningApplicationItem(scrapy.Item):
     case_officer = scrapy.Field()
     parish = scrapy.Field()
     ward = scrapy.Field()
+    amenity_society = scrapy.Field()
     district_reference = scrapy.Field()
     applicant_name = scrapy.Field()
     applicant_address = scrapy.Field()
