@@ -37,8 +37,8 @@ class PlanningApplicationDetailsFurtherInformation(pydantic.BaseModel):
     expected_decision_level: Optional[str] = None
     case_officer: Optional[str] = None
     parish: Optional[str] = None
-    amenity_society: Optional[str] = None
     ward: Optional[str] = None
+    amenity_society: Optional[str] = None
     district_reference: Optional[str] = None
     applicant_name: Optional[str] = None
     applicant_address: Optional[str] = None
