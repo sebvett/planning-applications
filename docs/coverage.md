@@ -15,7 +15,7 @@
 | Armagh Banbridge Craigavon                         | NIPP      | [Link](https://planningregister.planningsystemni.gov.uk)                                                          |
 | Arun                                               | Custom    | [Link](https://www.arun.gov.uk/planning-application-search)                                                       |
 | Ashfield                                           | Custom    | [Link](https://planning.ashfield.gov.uk/planning-applications/search-applications)                                |
-| Ashford                                            | Custom    | [Link](https://ashfordboroughcouncil.my.site.com/pr/s/register-view?c__q=&c__r=Arcus_BE_Public_Register)          |
+| Ashford                                            | Arcus     | [Link](https://ashfordboroughcouncil.my.site.com/pr/s/register-view?c__q=&c__r=Arcus_BE_Public_Register)          |
 | Babergh                                            | Idox      | [Link](https://planning.baberghmidsuffolk.gov.uk/online-applications)                                             |
 | Barking and Dagenham                               | Custom    | [Link](https://online-befirst.lbbd.gov.uk/planning/index.html?fa=search)                                          |
 | Barnet                                             | Idox      | [Link](https://publicaccess.barnet.gov.uk/online-applications)                                                    |
@@ -85,7 +85,7 @@
 | Coventry                                           | Custom    | [Link](https://planandregulatory.coventry.gov.uk/planning/index.html?fa=search)                                   |
 | Crawley                                            | Custom    | [Link](https://planningregister.crawley.gov.uk/#AdvancedSearchTab)                                                |
 | Croydon                                            | Idox      | [Link](https://publicaccess3.croydon.gov.uk/online-applications)                                                  |
-| Cumberland (Allerdale)                             | Custom    | [Link](https://cumberlandcouncil.my.site.com/pr3/s/register-view?c__r=Arcus_BE_Public_Register)                   |
+| Cumberland (Allerdale)                             | Arcus     | [Link](https://cumberlandcouncil.my.site.com/pr3/s/register-view?c__r=Arcus_BE_Public_Register)                   |
 | Cumberland (Carlisle)                              | Idox      | [Link](https://publicaccess.carlisle.gov.uk/online-applications)                                                  |
 | Cumberland (Copeland)                              | Custom    | [Link](https://www.copeland.gov.uk/planning/application-search)                                                   |
 | Darlington                                         | Idox      | [Link](https://publicaccess.darlington.gov.uk/online-applications)                                                |
@@ -118,18 +118,18 @@
 | East Sussex                                        | Custom    | [Link](https://apps.eastsussex.gov.uk/environment/planning/applications/register)                                 |
 | Edinburgh                                          | Idox      | [Link](https://citydev-portal.edinburgh.gov.uk/idoxpa-web)                                                        |
 | Enfield                                            | Idox      | [Link](https://planningandbuildingcontrol.enfield.gov.uk/online-applications)                                     |
-| Epping Forest                                      |           |                                                                                                                   |
-| Erewash                                            |           |                                                                                                                   |
-| Essex                                              |           |                                                                                                                   |
-| Exeter                                             |           |                                                                                                                   |
-| Exmoor                                             |           |                                                                                                                   |
-| Falkirk                                            |           |                                                                                                                   |
-| Fenland                                            |           |                                                                                                                   |
+| Epping Forest                                      | Arcus     | [Link](https://eppingforestdc.my.site.com/pr/s/register-view?c__r=Arcus_BE_Public_Register)                       |
+| Erewash                                            | Custom    | [Link](https://register.civicacx.co.uk/erewash/planning)                                                          |
+| Essex                                              | Custom    | [Link](https://planning.essex.gov.uk/Search/advanced)                                                             |
+| Exeter                                             | Idox      | [Link](https://publicaccess.exeter.gov.uk/online-applications)                                                    |
+| Exmoor                                             | Custom    | [Link](https://planning.agileapplications.co.uk/exmoor/search-applications)                                       |
+| Falkirk                                            | Idox      | [Link](https://edevelopment.falkirk.gov.uk/online)                                                                |
+| Fenland                                            | Idox      | [Link](https://www.publicaccess.fenland.gov.uk/publicaccess)                                                      |
 | Fermanagh and Omagh                                | NIPP      | [Link](https://planningregister.planningsystemni.gov.uk)                                                          |
-| Fife                                               |           |                                                                                                                   |
-| Flintshire                                         |           |                                                                                                                   |
-| Folkestone and Hythe                               |           |                                                                                                                   |
-| Forest of Dean                                     |           |                                                                                                                   |
+| Fife                                               | Idox      | [Link](https://planning.fife.gov.uk/online)                                                                       |
+| Flintshire                                         | Custom    | [Link](https://planning.agileapplications.co.uk/flintshire/search-applications)                                   |
+| Folkestone and Hythe                               | Arcus     | [Link](https://folkestonehythedc.my.site.com/PR3/s/be-register-view?c__r=Arcus_BE_Public_Register)                |
+| Forest of Dean                                     | Idox      | [Link](https://publicaccess.fdean.gov.uk/online-applications)                                                     |
 | Gateshead                                          |           |                                                                                                                   |
 | Gedling                                            |           |                                                                                                                   |
 | Glasgow                                            |           |                                                                                                                   |
