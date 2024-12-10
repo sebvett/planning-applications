@@ -396,10 +396,6 @@ class IdoxSpider(BaseSpider):
         yield item
         self.logger.info(f"Scraped item: {item}")
 
-    def handle_error(self, failure):
-        self.logger.error(f"Error processing request {failure.request}\nError details: {failure.value}")
-        raise scrapy.exceptions.CloseSpider(reason="Error processing request")
-
     # Comments
     # -------------------------------------------------------------------------
 

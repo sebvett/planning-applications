@@ -2,6 +2,8 @@ import enum
 from typing import List, cast
 
 import scrapy
+from scrapy.exceptions import CloseSpider
+from twisted.python.failure import Failure
 
 
 class objectType(enum.Enum):
@@ -47,3 +49,6 @@ class BaseSpider(scrapy.Spider):
     @property
     def should_scrape_comment(self) -> bool:
         return objectType.COMMENT in self.object_types
+
+    def handle_error(self, failure: Failure):
+        self.logger.error(repr(failure))

@@ -59,16 +59,9 @@ class SmartAdminSpider(BaseSpider):
 
         formdata = self._build_formdata(response)
 
-        if self.filter_status != applicationStatus.ALL:
-            formdata["caseStatus"] = self.filter_status.value
-
         yield from self._build_formrequest(response, formdata)
 
     def _build_formdata(self, response: Response) -> Dict[str, str]:
-        csrf = response.css("input[name='_csrf']::attr(value)").get()
-        if not csrf:
-            raise ValueError("Failed to find _csrf in response")
-
         return {
             "received_date_from": self.formatted_start_date,
             "received_date_to": self.formatted_end_date,
@@ -83,6 +76,8 @@ class SmartAdminSpider(BaseSpider):
         if not isinstance(response, TextResponse):
             raise ValueError("Response must be a TextResponse")
 
+        print(formdata)
+
         yield scrapy.FormRequest.from_response(response, formdata=formdata, callback=self.parse_results)
 
     def parse_results(self, response: Response):
@@ -90,12 +85,8 @@ class SmartAdminSpider(BaseSpider):
 
     @property
     def formatted_start_date(self) -> str:
-        return self.start_date.strftime("%Y-%m-%d")
+        return self.start_date.strftime("%d-%m-%Y")
 
     @property
     def formatted_end_date(self) -> str:
-        return self.end_date.strftime("%Y-%m-%d")
-
-    def handle_error(self, failure):
-        self.logger.error(f"Error processing request {failure.request}\nError details: {failure.value}")
-        raise scrapy.exceptions.CloseSpider(reason="Error processing request")
+        return self.end_date.strftime("%d-%m-%Y")
