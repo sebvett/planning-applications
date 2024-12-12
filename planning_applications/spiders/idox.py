@@ -10,8 +10,11 @@ from scrapy.http.response import Response
 from scrapy.http.response.text import TextResponse
 
 from planning_applications.items import (
+    IdoxPlanningApplicationDetailsFurtherInformation,
+    IdoxPlanningApplicationDetailsSummary,
+    IdoxPlanningApplicationItem,
+    IdoxPlanningApplicationPolygon,
     PlanningApplicationDocumentsDocument,
-    PlanningApplicationItem,
     applicationStatus,
 )
 from planning_applications.settings import DEFAULT_DATE_FORMAT
@@ -158,7 +161,7 @@ class IdoxSpider(BaseSpider):
     def parse_details_summary_tab(self, response: Response) -> Generator[Request, None, None]:
         self.logger.info(f"Parsing results on {response.url} (parse_details_summary_tab)")
 
-        details_summary = PlanningApplicationDetailsSummary()
+        details_summary = IdoxPlanningApplicationDetailsSummary()
 
         summary_table = response.css("#simpleDetailsTable")[0]
 
@@ -192,7 +195,7 @@ class IdoxSpider(BaseSpider):
     def parse_details_further_information_tab(self, response: Response) -> Generator[Request, None, None]:
         self.logger.info(f"Parsing results on {response.url} (parse_details_further_information_tab)")
 
-        details_further_information = PlanningApplicationDetailsFurtherInformation()
+        details_further_information = IdoxPlanningApplicationDetailsFurtherInformation()
 
         details_table = response.css("#applicationDetails")[0]
 
@@ -277,7 +280,7 @@ class IdoxSpider(BaseSpider):
         description_cell = self.get_cell_for_column_name(table, row, "Description")
 
         datestr = date_cell.xpath("./text()").get() if date_cell else None
-        date_published = datetime.strptime(datestr, "%d %b %Y").strftime("%Y-%m-%d") if datestr else None
+        date_published = datetime.strptime(datestr, "%d %b %Y") if datestr else None
 
         document_type = category_cell.xpath("./text()").get() if category_cell else None
         drawing_number = drawing_number_cell.xpath("./text()").get() if drawing_number_cell else None
@@ -294,7 +297,7 @@ class IdoxSpider(BaseSpider):
     # ArcGIS / Map
     # -------------------------------------------------------------------------
 
-    def parse_idox_arcgis(self, response: Response) -> Generator[PlanningApplicationItem, None, None]:
+    def parse_idox_arcgis(self, response: Response) -> Generator[IdoxPlanningApplicationItem, None, None]:
         self.logger.info(f"Parsing ArcGIS on {response.url}")
 
         parsed_response = json.loads(response.text)
@@ -323,7 +326,7 @@ class IdoxSpider(BaseSpider):
             self.logger.error(f"KEYVAL mismatch in response from {response.url}")
             return
 
-        polygon = PlanningApplicationPolygon(
+        polygon = IdoxPlanningApplicationPolygon(
             reference=response.meta["details_summary"].reference,
             polygon_geojson=json.dumps(parsed_response["features"][0]),
         )
@@ -358,7 +361,7 @@ class IdoxSpider(BaseSpider):
             return "".join(texts).strip()
         return None
 
-    def create_planning_application_item(self, meta) -> Generator[PlanningApplicationItem, None, None]:
+    def create_planning_application_item(self, meta) -> Generator[IdoxPlanningApplicationItem, None, None]:
         self.logger.info(f"Creating planning application item with meta: {meta}")
 
         idox_key_val = meta["keyval"]
@@ -367,7 +370,7 @@ class IdoxSpider(BaseSpider):
         documents = meta["documents"]
         polygon = meta["polygon"]
 
-        item = PlanningApplicationItem(
+        item = IdoxPlanningApplicationItem(
             lpa=self.name,
             idox_key_val=idox_key_val,
             reference=details_summary.reference,

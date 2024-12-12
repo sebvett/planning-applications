@@ -56,7 +56,7 @@ class PlanningApplication(pydantic.BaseModel):
 
 class PlanningApplicationDocumentsDocument(pydantic.BaseModel):
     url: str
-    date_published: datetime
+    date_published: Optional[datetime] = None
     document_type: Optional[str] = None
     description: Optional[str] = None
     drawing_number: Optional[str] = None
