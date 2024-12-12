@@ -28,6 +28,7 @@ class PlanningApplicationDetailsSummary(pydantic.BaseModel):
     application_validated: Optional[datetime] = None
     address: Optional[str] = None
     proposal: Optional[str] = None
+    status: Optional[str] = None
     appeal_status: Optional[str] = None
     appeal_decision: Optional[str] = None
 
@@ -97,6 +98,7 @@ class PlanningApplicationItem(scrapy.Item):
     application_validated = scrapy.Field()
     address = scrapy.Field()
     proposal = scrapy.Field()
+    status = scrapy.Field()
     appeal_status = scrapy.Field()
     appeal_decision = scrapy.Field()
     application_type = scrapy.Field()

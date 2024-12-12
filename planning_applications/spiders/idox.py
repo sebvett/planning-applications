@@ -177,6 +177,7 @@ class IdoxSpider(BaseSpider):
 
         details_summary.address = self._get_horizontal_table_value(summary_table, "Address")
         details_summary.proposal = self._get_horizontal_table_value(summary_table, "Proposal")
+        details_summary.status = self._get_horizontal_table_value(summary_table, "Status")
         details_summary.appeal_status = self._get_horizontal_table_value(summary_table, "Appeal Status")
         details_summary.appeal_decision = self._get_horizontal_table_value(summary_table, "Appeal Decision")
 
@@ -377,6 +378,7 @@ class IdoxSpider(BaseSpider):
             application_validated=details_summary.application_validated,
             address=details_summary.address,
             proposal=details_summary.proposal,
+            status=details_summary.status,
             appeal_status=details_summary.appeal_status,
             appeal_decision=details_summary.appeal_decision,
             application_type=details_further_information.application_type,

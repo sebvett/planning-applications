@@ -12,6 +12,7 @@
 | application_validated              | date         | False    | NULL               | NULL        |
 | address                            | varchar(255) | False    | NULL               | NULL        |
 | proposal                           | text         | False    | NULL               | NULL        |
+| status                             | varchar(255) | False    | NULL               | NULL        |
 | appeal_status                      | varchar(255) | False    | NULL               | NULL        |
 | appeal_decision                    | varchar(255) | False    | NULL               | NULL        |
 | application_type                   | varchar(255) | False    | NULL               | NULL        |
