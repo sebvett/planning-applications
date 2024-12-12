@@ -212,16 +212,15 @@
 | Newham                                             | Idox       | [Link](https://pa.newham.gov.uk/online-applications)                                                                              |
 | Newport                                            | Idox       | [Link](https://publicaccess.newport.gov.uk/online-applications)                                                                   |
 | Newry Mourne Down                                  | NIPP       | [Link](https://planningregister.planningsystemni.gov.uk)                                                                          |
-| North Norfolk                                      |            |                                                                                                                                   |
-| Norfolk                                            |            |                                                                                                                                   |
-| North Devon                                        |            |                                                                                                                                   |
-| North East Combined Authority                      |            |                                                                                                                                   |
-| North East Derbyshire                              |            |                                                                                                                                   |
-| North East Lincolnshire                            |            |                                                                                                                                   |
-| North Hertfordshire                                |            |                                                                                                                                   |
-| North Kesteven                                     |            |                                                                                                                                   |
-| North Lanark                                       |            |                                                                                                                                   |
-| North Lincolnshire                                 |            |                                                                                                                                   |
+| Norfolk                                            | Custom     | [Link](https://eplanning.norfolk.gov.uk/Search/Advanced)                                                                          |
+| North Norfolk                                      | Idox       | [Link](https://idoxpa.north-norfolk.gov.uk/online-applications)                                                                   |
+| North Devon                                        | Custom     | [Link](https://planning.northdevon.gov.uk/Search/Advanced)                                                                        |
+| North East Derbyshire                              | Idox       | [Link](https://planapps-online.ne-derbyshire.gov.uk/online-applications)                                                          |
+| North East Lincolnshire                            | Idox       | [Link](http://planninganddevelopment.nelincs.gov.uk/online-applications)                                                          |
+| North Hertfordshire                                | Idox       | [Link](https://pa2.north-herts.gov.uk/online-applications)                                                                        |
+| North Kesteven                                     | Idox       | [Link](https://planningonline.n-kesteven.gov.uk/online-applications)                                                              |
+| North Lanark                                       | Idox       | [Link](https://eplanning.northlanarkshire.gov.uk/online-applications)                                                             |
+| North Lincolnshire                                 | Custom     | [Link](https://apps.northlincs.gov.uk)                                                                                            |
 | North Northamptonshire                             |            |                                                                                                                                   |
 | North Somerset                                     |            |                                                                                                                                   |
 | North Tyneside                                     |            |                                                                                                                                   |
