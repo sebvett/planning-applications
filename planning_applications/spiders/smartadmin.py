@@ -9,14 +9,7 @@ from scrapy.http.request import Request
 from scrapy.http.response import Response
 from scrapy.http.response.text import TextResponse
 
-from planning_applications.items import (
-    PlanningApplicationDetailsFurtherInformation,
-    PlanningApplicationDetailsSummary,
-    PlanningApplicationDocumentsDocument,
-    PlanningApplicationItem,
-    PlanningApplicationPolygon,
-    applicationStatus,
-)
+from planning_applications.items import applicationStatus
 from planning_applications.settings import DEFAULT_DATE_FORMAT
 from planning_applications.spiders.base import BaseSpider
 

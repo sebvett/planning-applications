@@ -27,14 +27,67 @@ class applicationStatus(Enum):
 
 
 class PlanningApplication(pydantic.BaseModel):
+    lpa: str
+    reference: str
+    website_reference: str
+    url: str
+    submitted_date: datetime
+    validated_date: datetime
+    address: str
+    description: str
+    application_status: applicationStatus
+    application_decision: str
+    application_decision_date: datetime
+    appeal_status: str
+    appeal_decision: str
+    appeal_decision_date: datetime
+    application_type: str
+    expected_decision_level: str
+    actual_decision_level: str
+    case_officer: str
+    parish: str
+    ward: str
+    amenity_society: str
+    district_reference: str
+    applicant_name: str
+    applicant_address: str
+    environmental_assessment_requested: bool
 
 
-class PlanningApplicationDocument(pydantic.BaseModel):
-    pass
+class PlanningApplicationDocumentsDocument(pydantic.BaseModel):
+    url: str
+    date_published: datetime
+    document_type: Optional[str] = None
+    description: Optional[str] = None
+    drawing_number: Optional[str] = None
 
 
 class PlanningApplicationItem(scrapy.Item):
-    pass
+    lpa = scrapy.Field()
+    reference = scrapy.Field()
+    website_reference = scrapy.Field()
+    url = scrapy.Field()
+    submitted_date = scrapy.Field()
+    validated_date = scrapy.Field()
+    address = scrapy.Field()
+    description = scrapy.Field()
+    application_status = scrapy.Field()
+    application_decision = scrapy.Field()
+    application_decision_date = scrapy.Field()
+    appeal_status = scrapy.Field()
+    appeal_decision = scrapy.Field()
+    appeal_decision_date = scrapy.Field()
+    application_type = scrapy.Field()
+    expected_decision_level = scrapy.Field()
+    actual_decision_level = scrapy.Field()
+    case_officer = scrapy.Field()
+    parish = scrapy.Field()
+    ward = scrapy.Field()
+    amenity_society = scrapy.Field()
+    district_reference = scrapy.Field()
+    applicant_name = scrapy.Field()
+    applicant_address = scrapy.Field()
+    environmental_assessment_requested = scrapy.Field()
 
 
 # ---------------------------------------------------------------------------------------------------------------------
@@ -65,20 +118,8 @@ class IdoxPlanningApplicationDetailsFurtherInformation(pydantic.BaseModel):
     environmental_assessment_requested: Optional[str] = None
 
 
-class IdoxPlanningApplicationDocumentsDocument(pydantic.BaseModel):
-    date_published: Optional[str] = None
-    document_type: Optional[str] = None
-    drawing_number: Optional[str] = None
-    description: Optional[str] = None
-    url: Optional[str] = None
-
-
 class IdoxPlanningApplicationDocuments(pydantic.BaseModel):
-    documents: Optional[List[IdoxPlanningApplicationDocumentsDocument]] = None
-
-
-class IdoxPlanningApplicationRelatedCases(pydantic.BaseModel):
-    pass
+    documents: Optional[List[PlanningApplicationDocumentsDocument]] = None
 
 
 class IdoxPlanningApplicationPolygon(pydantic.BaseModel):
@@ -92,7 +133,6 @@ class IdoxPlanningApplication(pydantic.BaseModel):
     details_summary: Optional[IdoxPlanningApplicationDetailsSummary] = None
     details_further_information: Optional[IdoxPlanningApplicationDetailsFurtherInformation] = None
     documents: Optional[IdoxPlanningApplicationDocuments] = None
-    related_cases: Optional[IdoxPlanningApplicationRelatedCases] = None
     polygon: Optional[IdoxPlanningApplicationPolygon] = None
 
 

@@ -10,11 +10,8 @@ from scrapy.http.response import Response
 from scrapy.http.response.text import TextResponse
 
 from planning_applications.items import (
-    PlanningApplicationDetailsFurtherInformation,
-    PlanningApplicationDetailsSummary,
     PlanningApplicationDocumentsDocument,
     PlanningApplicationItem,
-    PlanningApplicationPolygon,
     applicationStatus,
 )
 from planning_applications.settings import DEFAULT_DATE_FORMAT
