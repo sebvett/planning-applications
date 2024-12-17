@@ -1,7 +1,3 @@
 # Planning Applications
 
-## Usage
-
-```bash
-uv run scrapy crawl <LPA>
-```
+Documentation can be found [here](https://buildwithtract.github.io/planning-applications)
