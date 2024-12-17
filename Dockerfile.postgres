@@ -1,0 +1,4 @@
+# Use the PostGIS image as the base
+FROM postgis/postgis:16-3.4
+
+COPY ./db/db.sql /docker-entrypoint-initdb.d/init.sql

@@ -113,7 +113,7 @@ ZYTE_API_EXPERIMENTAL_COOKIES_ENABLED = True
 LOG_LEVEL = "DEBUG"
 
 FEEDS = {
-    "output.json": {
+    "output/output.json": {
         "format": "jsonlines",
         "encoding": "utf8",
         "indent": 4,
