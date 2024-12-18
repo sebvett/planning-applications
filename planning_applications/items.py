@@ -64,8 +64,8 @@ class PlanningApplicationDocumentsDocument(pydantic.BaseModel):
 
 class PlanningApplicationItem(scrapy.Item):
     lpa = scrapy.Field()
-    reference = scrapy.Field()
     website_reference = scrapy.Field()
+    reference = scrapy.Field()
     url = scrapy.Field()
     submitted_date = scrapy.Field()
     validated_date = scrapy.Field()
@@ -88,6 +88,8 @@ class PlanningApplicationItem(scrapy.Item):
     applicant_name = scrapy.Field()
     applicant_address = scrapy.Field()
     environmental_assessment_requested = scrapy.Field()
+    documents = scrapy.Field()
+    polygon = scrapy.Field()
 
 
 # ---------------------------------------------------------------------------------------------------------------------
@@ -140,6 +142,7 @@ class IdoxPlanningApplicationItem(scrapy.Item):
     lpa = scrapy.Field()
     idox_key_val = scrapy.Field()
     reference = scrapy.Field()
+    url = scrapy.Field()
     application_received = scrapy.Field()
     application_validated = scrapy.Field()
     address = scrapy.Field()

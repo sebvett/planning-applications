@@ -70,9 +70,10 @@ COOKIES_ENABLED = True
 
 # Configure item pipelines
 # See https://docs.scrapy.org/en/latest/topics/item-pipeline.html
-# ITEM_PIPELINES = {
-#    "planning_applications.pipelines.PlanningApplicationsPipeline": 300,
-# }
+ITEM_PIPELINES = {
+    "planning_applications.pipelines.IdoxPlanningApplicationPipeline": 200,
+    "planning_applications.pipelines.PostgresPipeline": 300,
+}
 
 # Enable and configure the AutoThrottle extension (disabled by default)
 # See https://docs.scrapy.org/en/latest/topics/autothrottle.html
@@ -112,13 +113,13 @@ ZYTE_API_EXPERIMENTAL_COOKIES_ENABLED = True
 # LOG_FILE = "log.txt"
 LOG_LEVEL = "DEBUG"
 
-FEEDS = {
-    "output/output.json": {
-        "format": "jsonlines",
-        "encoding": "utf8",
-        "indent": 4,
-    },
-}
+# FEEDS = {
+#     "output/output.json": {
+#         "format": "jsonlines",
+#         "encoding": "utf8",
+#         "indent": 4,
+#     },
+# }
 
 # These settings make the search breadth-first instead of depth-first
 DEPTH_PRIORITY = 1

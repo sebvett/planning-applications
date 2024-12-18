@@ -364,16 +364,20 @@ class IdoxSpider(BaseSpider):
     def create_planning_application_item(self, meta) -> Generator[IdoxPlanningApplicationItem, None, None]:
         self.logger.info(f"Creating planning application item with meta: {meta}")
 
-        idox_key_val = meta["keyval"]
-        details_summary = meta["details_summary"]
-        details_further_information = meta["details_further_information"]
-        documents = meta["documents"]
-        polygon = meta["polygon"]
+        url: str = meta["original_response"].url
+        idox_key_val: str = meta["keyval"]
+        details_summary: IdoxPlanningApplicationDetailsSummary = meta["details_summary"]
+        details_further_information: IdoxPlanningApplicationDetailsFurtherInformation = meta[
+            "details_further_information"
+        ]
+        documents: List[PlanningApplicationDocumentsDocument] = meta["documents"]
+        polygon: IdoxPlanningApplicationPolygon = meta["polygon"]
 
         item = IdoxPlanningApplicationItem(
             lpa=self.name,
             idox_key_val=idox_key_val,
             reference=details_summary.reference,
+            url=url,
             application_received=details_summary.application_received,
             application_validated=details_summary.application_validated,
             address=details_summary.address,

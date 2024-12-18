@@ -13,8 +13,12 @@ dependencies = [
     "pydantic>=2.10.2",
     "mkdocs>=1.6.1",
     "mkdocs-material>=9.5.47",
+    "psycopg>=3.2.3",
 ]
 
 [tool.ruff]
 line-length = 119
 lint.ignore = ["F401"]
+
+[tool.uv.sources]
+scrapy-zyte-api = { git = "https://github.com/scrapy-plugins/scrapy-zyte-api.git" }
