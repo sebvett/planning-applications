@@ -2,7 +2,7 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 DROP TABLE IF EXISTS public.planning_application_documents CASCADE;
 
-DROP TABLE IF EXISTS public.planning_application_polygons CASCADE;
+DROP TABLE IF EXISTS public.planning_application_geometries CASCADE;
 
 DROP TABLE IF EXISTS public.planning_applications CASCADE;
 
