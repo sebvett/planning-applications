@@ -89,7 +89,7 @@ class PlanningApplicationItem(scrapy.Item):
     applicant_address = scrapy.Field()
     environmental_assessment_requested = scrapy.Field()
     documents = scrapy.Field()
-    polygon = scrapy.Field()
+    geometry = scrapy.Field()
 
 
 # ---------------------------------------------------------------------------------------------------------------------
@@ -124,9 +124,9 @@ class IdoxPlanningApplicationDocuments(pydantic.BaseModel):
     documents: Optional[List[PlanningApplicationDocumentsDocument]] = None
 
 
-class IdoxPlanningApplicationPolygon(pydantic.BaseModel):
+class IdoxPlanningApplicationGeometry(pydantic.BaseModel):
     reference: str
-    polygon_geojson: str = pydantic.Field(repr=False)
+    geometry: str = pydantic.Field(repr=False)
 
 
 class IdoxPlanningApplication(pydantic.BaseModel):
@@ -135,7 +135,7 @@ class IdoxPlanningApplication(pydantic.BaseModel):
     details_summary: Optional[IdoxPlanningApplicationDetailsSummary] = None
     details_further_information: Optional[IdoxPlanningApplicationDetailsFurtherInformation] = None
     documents: Optional[IdoxPlanningApplicationDocuments] = None
-    polygon: Optional[IdoxPlanningApplicationPolygon] = None
+    geometry: Optional[IdoxPlanningApplicationGeometry] = None
 
 
 class IdoxPlanningApplicationItem(scrapy.Item):
@@ -161,4 +161,4 @@ class IdoxPlanningApplicationItem(scrapy.Item):
     applicant_address = scrapy.Field()
     environmental_assessment_requested = scrapy.Field()
     documents = scrapy.Field()
-    polygon = scrapy.Field()
+    geometry = scrapy.Field()

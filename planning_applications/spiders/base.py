@@ -9,7 +9,7 @@ from twisted.python.failure import Failure
 class objectType(enum.Enum):
     APPLICATION = "application"
     DOCUMENT = "document"
-    POLYGON = "polygon"
+    GEOMETRY = "geometry"
     COMMENT = "comment"
 
 
@@ -23,7 +23,7 @@ class BaseSpider(scrapy.Spider):
     object_types: List[objectType] = [
         objectType.APPLICATION,
         objectType.DOCUMENT,
-        objectType.POLYGON,
+        objectType.GEOMETRY,
         objectType.COMMENT,
     ]
 
@@ -43,8 +43,8 @@ class BaseSpider(scrapy.Spider):
         return objectType.DOCUMENT in self.object_types
 
     @property
-    def should_scrape_polygon(self) -> bool:
-        return objectType.POLYGON in self.object_types
+    def should_scrape_geometry(self) -> bool:
+        return objectType.GEOMETRY in self.object_types
 
     @property
     def should_scrape_comment(self) -> bool:

@@ -61,6 +61,7 @@ CREATE TABLE
     public.planning_application_geometries (
         uuid uuid NOT NULL DEFAULT uuid_generate_v4 (),
         planning_application_uuid uuid NOT NULL,
+        reference CHARACTER VARYING(255) NOT NULL,
         geometry geometry NOT NULL,
         first_imported_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
         last_imported_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,

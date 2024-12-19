@@ -1,6 +1,9 @@
 # Use a Python image with uv pre-installed
 FROM ghcr.io/astral-sh/uv:python3.12-bookworm-slim
 
+# Install Git so uv can pull from a Git-based dependency
+RUN apt-get update && apt-get install -y git libpq-dev
+
 # Install the project into `/app`
 WORKDIR /app
 

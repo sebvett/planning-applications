@@ -12,8 +12,8 @@ from scrapy.http.response.text import TextResponse
 from planning_applications.items import (
     IdoxPlanningApplicationDetailsFurtherInformation,
     IdoxPlanningApplicationDetailsSummary,
+    IdoxPlanningApplicationGeometry,
     IdoxPlanningApplicationItem,
-    IdoxPlanningApplicationPolygon,
     PlanningApplicationDocumentsDocument,
     applicationStatus,
 )
@@ -149,10 +149,7 @@ class IdoxSpider(BaseSpider):
             }
 
             yield Request(
-                details_summary_url,
-                callback=self.parse_details_summary_tab,
-                meta=meta,
-                errback=self.handle_error,
+                details_summary_url, callback=self.parse_details_summary_tab, meta=meta, errback=self.handle_error
             )
 
     # Details
@@ -184,7 +181,6 @@ class IdoxSpider(BaseSpider):
         meta = response.meta
         meta["url"] = response.url
         meta["details_summary"] = details_summary
-        self.logger.info(f"meta after parsing details summary: {meta}")
 
         yield Request(
             response.url.replace("activeTab=summary", "activeTab=details"),
@@ -226,7 +222,6 @@ class IdoxSpider(BaseSpider):
 
         meta = response.meta
         meta["details_further_information"] = details_further_information
-        self.logger.info(f"meta after parsing details further information: {meta}")
 
         yield Request(
             response.url.replace("activeTab=details", "activeTab=documents"),
@@ -252,7 +247,6 @@ class IdoxSpider(BaseSpider):
 
         meta = response.meta
         meta["documents"] = documents
-        self.logger.info(f"meta after parsing documents: {meta}")
 
         if self.arcgis_url:
             arcgis_url = (
@@ -327,14 +321,13 @@ class IdoxSpider(BaseSpider):
             self.logger.error(f"KEYVAL mismatch in response from {response.url}")
             return
 
-        polygon = IdoxPlanningApplicationPolygon(
+        geometry = IdoxPlanningApplicationGeometry(
             reference=response.meta["details_summary"].reference,
-            polygon_geojson=json.dumps(parsed_response["features"][0]),
+            geometry=json.dumps(parsed_response["features"][0]["geometry"]),
         )
 
         meta = response.meta
-        meta["polygon"] = polygon
-        self.logger.info(f"meta after parsing polygon: {meta}")
+        meta["geometry"] = geometry
 
         yield from self.create_planning_application_item(meta)
 
@@ -363,8 +356,6 @@ class IdoxSpider(BaseSpider):
         return None
 
     def create_planning_application_item(self, meta) -> Generator[IdoxPlanningApplicationItem, None, None]:
-        self.logger.info(f"Creating planning application item with meta: {meta}")
-
         url: str = meta["url"]
         idox_key_val: str = meta["keyval"]
         details_summary: IdoxPlanningApplicationDetailsSummary = meta["details_summary"]
@@ -372,7 +363,7 @@ class IdoxSpider(BaseSpider):
             "details_further_information"
         ]
         documents: List[PlanningApplicationDocumentsDocument] = meta["documents"]
-        polygon: IdoxPlanningApplicationPolygon = meta["polygon"]
+        geometry: IdoxPlanningApplicationGeometry = meta["geometry"]
 
         item = IdoxPlanningApplicationItem(
             lpa=self.name,
@@ -397,7 +388,7 @@ class IdoxSpider(BaseSpider):
             applicant_address=details_further_information.applicant_address,
             environmental_assessment_requested=details_further_information.environmental_assessment_requested,
             documents=documents,
-            polygon=polygon,
+            geometry=geometry,
         )
 
         yield item
