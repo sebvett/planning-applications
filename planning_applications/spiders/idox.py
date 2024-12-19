@@ -182,6 +182,7 @@ class IdoxSpider(BaseSpider):
         details_summary.appeal_decision = self._get_horizontal_table_value(summary_table, "Appeal Decision")
 
         meta = response.meta
+        meta["url"] = response.url
         meta["details_summary"] = details_summary
         self.logger.info(f"meta after parsing details summary: {meta}")
 
@@ -364,7 +365,7 @@ class IdoxSpider(BaseSpider):
     def create_planning_application_item(self, meta) -> Generator[IdoxPlanningApplicationItem, None, None]:
         self.logger.info(f"Creating planning application item with meta: {meta}")
 
-        url: str = meta["original_response"].url
+        url: str = meta["url"]
         idox_key_val: str = meta["keyval"]
         details_summary: IdoxPlanningApplicationDetailsSummary = meta["details_summary"]
         details_further_information: IdoxPlanningApplicationDetailsFurtherInformation = meta[
