@@ -1,5 +1,10 @@
 site_name: Planning Applications
 theme:
   name: material
+  palette:
+    primary: custom
   features:
     - navigation.expand
+
+extra_css:
+  - stylesheets/extra.css

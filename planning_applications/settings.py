@@ -111,7 +111,7 @@ ADDONS = {
 ZYTE_API_EXPERIMENTAL_COOKIES_ENABLED = True
 
 # LOG_FILE = "log.txt"
-LOG_LEVEL = "DEBUG"
+LOG_LEVEL = "INFO"
 
 # FEEDS = {
 #     "output/output.json": {

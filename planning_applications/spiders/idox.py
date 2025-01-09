@@ -1,6 +1,7 @@
 import json
+from calendar import monthrange
 from datetime import date, datetime
-from typing import Dict, Generator, List, Optional
+from typing import Dict, Generator, List, Optional, Tuple
 
 import scrapy
 import scrapy.exceptions
@@ -20,8 +21,8 @@ from planning_applications.items import (
 from planning_applications.settings import DEFAULT_DATE_FORMAT
 from planning_applications.spiders.base import BaseSpider
 
-DEFAULT_START_DATE = datetime(datetime.now().year, datetime.now().month, 1)
-DEFAULT_END_DATE = datetime.now()
+DEFAULT_START_DATE = datetime(datetime.now().year, datetime.now().month, 1).date()
+DEFAULT_END_DATE = datetime.now().date()
 
 
 class IdoxSpider(BaseSpider):
@@ -49,14 +50,26 @@ class IdoxSpider(BaseSpider):
             raise ValueError(f"start_date {self.start_date} must be earlier than to_date {self.end_date}")
 
     def start_requests(self) -> Generator[Request, None, None]:
-        self.logger.info(
-            f"Searching for {self.name} applications between {self.start_date} and {self.end_date} with status {self.filter_status.value}"
+        """
+        First entry point: load the advanced search page so we can get the form/CSRF token.
+        """
+        yield Request(
+            self.start_url,
+            callback=self._start_new_month,
+            errback=self.handle_error,
+            dont_filter=True,
         )
-        yield Request(self.start_url, callback=self.submit_form, errback=self.handle_error)
+
+    def _start_new_month(self, response: Response):
+        """
+        We are on the advanced search page.
+        Now we can 'submit_form' using the date range in response.meta (start_date, end_date).
+        """
+        self.logger.info(f"Scheduling new month {self.start_date} to {self.end_date}")
+        yield from self.submit_form(response)
 
     def submit_form(self, response: Response) -> Generator[Request, None, None]:
         self.logger.info(f"Submitting search form on {response.url}")
-
         formdata = self._build_formdata(response)
 
         if self.filter_status != applicationStatus.ALL:
@@ -72,8 +85,8 @@ class IdoxSpider(BaseSpider):
         return {
             "_csrf": csrf,
             "caseAddressType": "Application",
-            "date(applicationValidatedStart)": self.formatted_start_date,
-            "date(applicationValidatedEnd)": self.formatted_end_date,
+            "date(applicationValidatedStart)": self.start_date.strftime("%d/%m/%Y"),
+            "date(applicationValidatedEnd)": self.end_date.strftime("%d/%m/%Y"),
             "searchType": "Application",
         }
 
@@ -81,35 +94,53 @@ class IdoxSpider(BaseSpider):
         if not isinstance(response, TextResponse):
             raise ValueError("Response must be a TextResponse")
 
-        yield scrapy.FormRequest.from_response(response, formdata=formdata, callback=self.parse_results)
+        yield scrapy.FormRequest.from_response(
+            response,
+            formdata=formdata,
+            callback=self.parse_results,
+            meta=response.meta,
+            dont_filter=True,
+        )
 
     def parse_results(self, response: Response):
         self.logger.info(f"Parsing results from {response.url}")
 
         message_box = response.css(".messagebox")
-
-        if len(message_box) > 0:
-            if "No results found" in message_box[0].extract():
+        if message_box:
+            msg_text = message_box[0].extract()
+            if "No results found" in msg_text:
                 self.logger.info(f"No applications found on {response.url}")
-                return
-
-            if "Too many results found" in message_box[0].extract():
+                # Do not return here; let it fall through to check search_results
+            elif "Too many results found" in msg_text:
                 self.logger.error(f"Too many results found on {response.url}. Make the search more specific.")
+                # If you still want to proceed, remove this return OR schedule previous month here, too.
                 return
 
         application_tools = response.css("#applicationTools")
-        if len(application_tools) > 0:
+        if application_tools:
             self.logger.info(f"Only one application found on {response.url}")
             yield from self.parse_details_summary_tab(response)
+            yield from self._maybe_schedule_previous_month(response)
             return
 
+        # If #searchresults doesn’t exist or is empty => no apps => schedule previous month
         search_results = response.css("#searchresults")
+        if not search_results:
+            self.logger.info(f"No #searchresults found on {response.url}")
+            yield from self._maybe_schedule_previous_month(response)
+            return
+
+        # If #searchresults exists but is empty => no apps => schedule previous month
+        search_results = search_results[0].css(".searchresult")
         if len(search_results) == 0:
             self.logger.info(f"No applications found on {response.url}")
+            yield from self._maybe_schedule_previous_month(response)
             return
 
-        search_results = search_results[0].css(".searchresult")
         self.logger.info(f"Found {len(search_results)} applications on {response.url}")
+        for result in search_results:
+            description = result.css(".summaryLinkTextClamp::text").get()
+            self.logger.info(f"Found application: {description}")
 
         for result in search_results:
             self.logger.info(f"heading into {result.css("a::attr(href)").get()}")
@@ -119,11 +150,19 @@ class IdoxSpider(BaseSpider):
 
             yield from self._parse_single_result(result, response)
 
+        # If no next page (or if no results, etc.), schedule previous month:
         next_page = response.css(".next::attr(href)").get()
         if next_page:
-            self.logger.info(f"Found next page at {next_page}")
             next_page_url = response.urljoin(next_page)
-            yield Request(next_page_url, callback=self.parse_results)
+            self.logger.info(f"Found next page at {next_page_url}")
+            yield Request(
+                url=next_page_url,
+                callback=self.parse_results,
+                meta=response.meta,
+                dont_filter=True,
+            )
+        else:
+            yield from self._maybe_schedule_previous_month(response)
 
     def _parse_single_result(self, result: Selector, response: Response):
         details_summary_url = result.css("a::attr(href)").get()
@@ -158,29 +197,26 @@ class IdoxSpider(BaseSpider):
     def parse_details_summary_tab(self, response: Response) -> Generator[Request, None, None]:
         self.logger.info(f"Parsing results on {response.url} (parse_details_summary_tab)")
 
-        details_summary = IdoxPlanningApplicationDetailsSummary()
+        item = IdoxPlanningApplicationDetailsSummary()
 
         summary_table = response.css("#simpleDetailsTable")[0]
 
-        details_summary.reference = self._get_horizontal_table_value(summary_table, "Reference")
-
+        item.reference = self._get_horizontal_table_value(summary_table, "Reference")
         application_received = self._get_horizontal_table_value(summary_table, "Application Received")
         if application_received:
-            details_summary.application_received = datetime.strptime(application_received, "%a %d %b %Y")
-
+            item.application_received = datetime.strptime(application_received, "%a %d %b %Y")
         application_validated = self._get_horizontal_table_value(summary_table, "Application Validated")
         if application_validated:
-            details_summary.application_validated = datetime.strptime(application_validated, "%a %d %b %Y")
-
-        details_summary.address = self._get_horizontal_table_value(summary_table, "Address")
-        details_summary.proposal = self._get_horizontal_table_value(summary_table, "Proposal")
-        details_summary.status = self._get_horizontal_table_value(summary_table, "Status")
-        details_summary.appeal_status = self._get_horizontal_table_value(summary_table, "Appeal Status")
-        details_summary.appeal_decision = self._get_horizontal_table_value(summary_table, "Appeal Decision")
+            item.application_validated = datetime.strptime(application_validated, "%a %d %b %Y")
+        item.address = self._get_horizontal_table_value(summary_table, "Address")
+        item.proposal = self._get_horizontal_table_value(summary_table, "Proposal")
+        item.status = self._get_horizontal_table_value(summary_table, "Status")
+        item.appeal_status = self._get_horizontal_table_value(summary_table, "Appeal Status")
+        item.appeal_decision = self._get_horizontal_table_value(summary_table, "Appeal Decision")
 
         meta = response.meta
         meta["url"] = response.url
-        meta["details_summary"] = details_summary
+        meta["details_summary"] = item
 
         yield Request(
             response.url.replace("activeTab=summary", "activeTab=details"),
@@ -192,36 +228,26 @@ class IdoxSpider(BaseSpider):
     def parse_details_further_information_tab(self, response: Response) -> Generator[Request, None, None]:
         self.logger.info(f"Parsing results on {response.url} (parse_details_further_information_tab)")
 
-        details_further_information = IdoxPlanningApplicationDetailsFurtherInformation()
+        item = IdoxPlanningApplicationDetailsFurtherInformation()
 
         details_table = response.css("#applicationDetails")[0]
 
-        details_further_information.application_type = self._get_horizontal_table_value(
-            details_table, "Application Type"
-        )
-        details_further_information.expected_decision_level = self._get_horizontal_table_value(
-            details_table, "Expected Decision Level"
-        )
-        details_further_information.case_officer = self._get_horizontal_table_value(details_table, "Case Officer")
-        details_further_information.parish = self._get_horizontal_table_value(details_table, "Parish")
-        details_further_information.ward = self._get_horizontal_table_value(details_table, "Ward")
-        details_further_information.amenity_society = self._get_horizontal_table_value(
-            details_table, "Amenity Society"
-        )
-        details_further_information.applicant_name = self._get_horizontal_table_value(details_table, "Applicant Name")
-        details_further_information.district_reference = self._get_horizontal_table_value(
-            details_table, "District Reference"
-        )
-        details_further_information.applicant_name = self._get_horizontal_table_value(details_table, "Applicant Name")
-        details_further_information.applicant_address = self._get_horizontal_table_value(
-            details_table, "Applicant Address"
-        )
-        details_further_information.environmental_assessment_requested = self._get_horizontal_table_value(
+        item.application_type = self._get_horizontal_table_value(details_table, "Application Type")
+        item.expected_decision_level = self._get_horizontal_table_value(details_table, "Expected Decision Level")
+        item.case_officer = self._get_horizontal_table_value(details_table, "Case Officer")
+        item.parish = self._get_horizontal_table_value(details_table, "Parish")
+        item.ward = self._get_horizontal_table_value(details_table, "Ward")
+        item.amenity_society = self._get_horizontal_table_value(details_table, "Amenity Society")
+        item.applicant_name = self._get_horizontal_table_value(details_table, "Applicant Name")
+        item.district_reference = self._get_horizontal_table_value(details_table, "District Reference")
+        item.applicant_name = self._get_horizontal_table_value(details_table, "Applicant Name")
+        item.applicant_address = self._get_horizontal_table_value(details_table, "Applicant Address")
+        item.environmental_assessment_requested = self._get_horizontal_table_value(
             details_table, "Environmental Assessment Requested"
         )
 
         meta = response.meta
-        meta["details_further_information"] = details_further_information
+        meta["details_further_information"] = item
 
         yield Request(
             response.url.replace("activeTab=details", "activeTab=documents"),
@@ -293,54 +319,63 @@ class IdoxSpider(BaseSpider):
     # -------------------------------------------------------------------------
 
     def parse_idox_arcgis(self, response: Response) -> Generator[IdoxPlanningApplicationItem, None, None]:
-        self.logger.info(f"Parsing ArcGIS on {response.url}")
+        self.logger.info(f"Parsing ArcGIS for application at {response.meta['url']}")
 
         parsed_response = json.loads(response.text)
 
-        if parsed_response["features"] is None:
-            self.logger.error(f"No features found in response from {response.url}")
-            return
+        item = IdoxPlanningApplicationGeometry(reference=response.meta["details_summary"].reference, geometry=None)
 
-        if len(parsed_response["features"]) == 0:
+        if not parsed_response["features"]:
             self.logger.error(f"No features found in response from {response.url}")
-            return
-
         if parsed_response["features"][0]["geometry"] is None:
             self.logger.error(f"No geometry found in response from {response.url}")
-            return
-
         if parsed_response["features"][0]["properties"] is None:
             self.logger.error(f"No geometry found in response from {response.url}")
-            return
-
         if parsed_response["features"][0]["properties"]["KEYVAL"] is None:
             self.logger.error(f"No KEYVAL found in response from {response.url}")
-            return
-
         if parsed_response["features"][0]["properties"]["KEYVAL"] != response.meta["keyval"]:
             self.logger.error(f"KEYVAL mismatch in response from {response.url}")
-            return
 
-        geometry = IdoxPlanningApplicationGeometry(
-            reference=response.meta["details_summary"].reference,
-            geometry=json.dumps(parsed_response["features"][0]["geometry"]),
-        )
+        item.geometry = json.dumps(parsed_response["features"][0]["geometry"])
 
         meta = response.meta
-        meta["geometry"] = geometry
+        meta["geometry"] = item
 
         yield from self.create_planning_application_item(meta)
 
     # Helpers
     # -------------------------------------------------------------------------
 
-    @property
-    def formatted_start_date(self) -> str:
-        return self.start_date.strftime("%d/%m/%Y")
+    def _maybe_schedule_previous_month(self, response: Response):
+        """
+        Revisit the advanced search page, passing the *previous month* date range via meta.
+        Because some sites require a fresh form load and new tokens for each search.
+        """
 
-    @property
-    def formatted_end_date(self) -> str:
-        return self.end_date.strftime("%d/%m/%Y")
+        if self.start_date >= date(2000, 1, 1):
+            prev_month_start, prev_month_end = self._previous_month(self.start_date)
+            if prev_month_start >= date(2000, 1, 1):
+                self.start_date = prev_month_start
+                self.end_date = prev_month_end
+                self.logger.info(f"Scheduling previous month {self.start_date} to {self.end_date}")
+                yield Request(
+                    self.start_url,
+                    callback=self._start_new_month,
+                    errback=self.handle_error,
+                    dont_filter=True,
+                )
+
+    def _previous_month(self, some_date: date) -> Tuple[date, date]:
+        year = some_date.year
+        month = some_date.month
+        if month == 1:
+            new_year = year - 1
+            new_month = 12
+        else:
+            new_year = year
+            new_month = month - 1
+        last_day = monthrange(new_year, new_month)[1]
+        return date(new_year, new_month, 1), date(new_year, new_month, last_day)
 
     def get_cell_for_column_name(self, table: Selector, row: Selector, column_name: str) -> Optional[Selector]:
         value = table.css(f"th:contains('{column_name}')").xpath("count(preceding-sibling::th)").get()

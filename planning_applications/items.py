@@ -29,7 +29,7 @@ class PlanningApplication(pydantic.BaseModel):
     submitted_date: datetime
     validated_date: datetime
     address: str
-    description: str
+    description: Optional[str] = None
     application_status: applicationStatus
     application_decision: str
     application_decision_date: datetime
@@ -121,7 +121,7 @@ class IdoxPlanningApplicationDocuments(pydantic.BaseModel):
 
 class IdoxPlanningApplicationGeometry(pydantic.BaseModel):
     reference: str
-    geometry: str = pydantic.Field(repr=False)
+    geometry: Optional[str] = pydantic.Field(repr=False)
 
 
 class IdoxPlanningApplication(pydantic.BaseModel):

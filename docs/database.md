@@ -14,7 +14,7 @@
 | submitted_date                     | date         | False    | NULL               | NULL        |
 | validated_date                     | date         | False    | NULL               | NULL        |
 | address                            | varchar(255) | False    | NULL               | NULL        |
-| description                        | text         | False    | NULL               | NULL        |
+| description                        | text         | True     | NULL               | NULL        |
 | application_status                 | varchar(255) | False    | NULL               | NULL        |
 | application_decision               | varchar(255) | False    | NULL               | NULL        |
 | application_decision_date          | date         | False    | NULL               | NULL        |
@@ -43,7 +43,7 @@
 | planning_application_uuid | uuid         | False    | NULL               | planning_applications.uuid |
 | date_published            | date         | False    | NULL               | NULL                       |
 | document_type             | varchar(255) | False    | NULL               | NULL                       |
-| description               | text         | False    | NULL               | NULL                       |
+| description               | text         | True     | NULL               | NULL                       |
 | url                       | text         | False    | NULL               | NULL                       |
 | drawing_number            | varchar(255) | True     | NULL               | NULL                       |
 | first_imported_at         | timestamp    | False    | CURRENT_TIMESTAMP  | NULL                       |
@@ -72,7 +72,7 @@
 | application_received               | date         | False    | NULL               | NULL        |
 | application_validated              | date         | False    | NULL               | NULL        |
 | address                            | varchar(255) | False    | NULL               | NULL        |
-| proposal                           | text         | False    | NULL               | NULL        |
+| proposal                           | text         | True     | NULL               | NULL        |
 | status                             | varchar(255) | False    | NULL               | NULL        |
 | appeal_status                      | varchar(255) | False    | NULL               | NULL        |
 | appeal_decision                    | varchar(255) | False    | NULL               | NULL        |
@@ -98,7 +98,7 @@
 | date_published            | date         | False    | NULL               | NULL                       |
 | document_type             | varchar(255) | False    | NULL               | NULL                       |
 | drawing_number            | varchar(255) | True     | NULL               | NULL                       |
-| description               | text         | False    | NULL               | NULL                       |
+| description               | text         | True     | NULL               | NULL                       |
 | url                       | text         | False    | NULL               | NULL                       |
 | first_imported_at         | timestamp    | False    | CURRENT_TIMESTAMP  | NULL                       |
 | last_imported_at          | timestamp    | False    | CURRENT_TIMESTAMP  | NULL                       |

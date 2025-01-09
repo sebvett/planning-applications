@@ -52,3 +52,5 @@ class BaseSpider(scrapy.Spider):
 
     def handle_error(self, failure: Failure):
         self.logger.error(repr(failure))
+        # Avoid raising the error — passing keeps the spider alive
+        pass
