@@ -69,8 +69,6 @@ class SmartAdminSpider(BaseSpider):
         if not isinstance(response, TextResponse):
             raise ValueError("Response must be a TextResponse")
 
-        print(formdata)
-
         yield scrapy.FormRequest.from_response(response, formdata=formdata, callback=self.parse_results)
 
     def parse_results(self, response: Response):

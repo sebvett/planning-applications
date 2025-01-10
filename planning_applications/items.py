@@ -28,25 +28,26 @@ class PlanningApplication(pydantic.BaseModel):
     url: str
     submitted_date: datetime
     validated_date: datetime
-    address: str
+    address: Optional[str] = None
     description: Optional[str] = None
     application_status: applicationStatus
-    application_decision: str
-    application_decision_date: datetime
-    appeal_status: str
-    appeal_decision: str
-    appeal_decision_date: datetime
-    application_type: str
-    expected_decision_level: str
-    actual_decision_level: str
-    case_officer: str
-    parish: str
-    ward: str
-    amenity_society: str
-    district_reference: str
-    applicant_name: str
-    applicant_address: str
-    environmental_assessment_requested: bool
+    application_decision: Optional[str] = None
+    application_decision_date: Optional[datetime] = None
+    appeal_status: Optional[str] = None
+    appeal_decision: Optional[str] = None
+    appeal_decision_date: Optional[datetime] = None
+    application_type: Optional[str] = None
+    expected_decision_level: Optional[str] = None
+    actual_decision_level: Optional[str] = None
+    case_officer: Optional[str] = None
+    parish: Optional[str] = None
+    ward: Optional[str] = None
+    amenity_society: Optional[str] = None
+    district_reference: Optional[str] = None
+    applicant_name: Optional[str] = None
+    applicant_address: Optional[str] = None
+    environmental_assessment_requested: Optional[bool] = None
+    is_active: bool
 
 
 class PlanningApplicationDocumentsDocument(pydantic.BaseModel):
@@ -83,6 +84,7 @@ class PlanningApplicationItem(scrapy.Item):
     applicant_name = scrapy.Field()
     applicant_address = scrapy.Field()
     environmental_assessment_requested = scrapy.Field()
+    is_active = scrapy.Field()
     documents = scrapy.Field()
     geometry = scrapy.Field()
 
@@ -98,6 +100,8 @@ class IdoxPlanningApplicationDetailsSummary(pydantic.BaseModel):
     address: Optional[str] = None
     proposal: Optional[str] = None
     status: Optional[str] = None
+    decision: Optional[str] = None
+    decision_issued_date: Optional[datetime] = None
     appeal_status: Optional[str] = None
     appeal_decision: Optional[str] = None
 
@@ -143,6 +147,8 @@ class IdoxPlanningApplicationItem(scrapy.Item):
     address = scrapy.Field()
     proposal = scrapy.Field()
     status = scrapy.Field()
+    decision = scrapy.Field()
+    decision_issued_date = scrapy.Field()
     appeal_status = scrapy.Field()
     appeal_decision = scrapy.Field()
     application_type = scrapy.Field()
@@ -155,5 +161,6 @@ class IdoxPlanningApplicationItem(scrapy.Item):
     applicant_name = scrapy.Field()
     applicant_address = scrapy.Field()
     environmental_assessment_requested = scrapy.Field()
+    is_active = scrapy.Field()
     documents = scrapy.Field()
     geometry = scrapy.Field()

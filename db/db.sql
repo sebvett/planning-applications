@@ -34,6 +34,7 @@ CREATE TABLE
         applicant_name CHARACTER VARYING(255) NOT NULL,
         applicant_address CHARACTER VARYING(255),
         environmental_assessment_requested BOOLEAN,
+        is_active BOOLEAN NOT NULL DEFAULT TRUE,
         first_imported_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
         last_imported_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
         CONSTRAINT planning_applications_pkey PRIMARY KEY (uuid),
@@ -54,6 +55,8 @@ CREATE TABLE
         drawing_number CHARACTER VARYING(255),
         first_imported_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
         last_imported_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        CONSTRAINT planning_application_documents_pkey PRIMARY KEY (uuid),
+        CONSTRAINT planning_application_documents_url_key UNIQUE (url),
         FOREIGN KEY (planning_application_uuid) REFERENCES public.planning_applications (uuid)
     );
 
@@ -65,5 +68,7 @@ CREATE TABLE
         geometry geometry,
         first_imported_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
         last_imported_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        CONSTRAINT planning_application_geometries_pkey PRIMARY KEY (uuid),
+        CONSTRAINT planning_application_geometries_planning_application_uuid_reference_key UNIQUE (planning_application_uuid, reference),
         FOREIGN KEY (planning_application_uuid) REFERENCES public.planning_applications (uuid)
     );

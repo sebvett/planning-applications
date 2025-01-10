@@ -1,7 +1,6 @@
 import json
-from calendar import monthrange
-from datetime import date, datetime
-from typing import Dict, Generator, List, Optional, Tuple
+from datetime import date, datetime, timedelta
+from typing import Dict, Generator, List, Optional
 
 import scrapy
 import scrapy.exceptions
@@ -10,6 +9,7 @@ from scrapy.http.request import Request
 from scrapy.http.response import Response
 from scrapy.http.response.text import TextResponse
 
+from planning_applications.db import select_planning_application_by_url
 from planning_applications.items import (
     IdoxPlanningApplicationDetailsFurtherInformation,
     IdoxPlanningApplicationDetailsSummary,
@@ -20,6 +20,7 @@ from planning_applications.items import (
 )
 from planning_applications.settings import DEFAULT_DATE_FORMAT
 from planning_applications.spiders.base import BaseSpider
+from planning_applications.utils import previous_month
 
 DEFAULT_START_DATE = datetime(datetime.now().year, datetime.now().month, 1).date()
 DEFAULT_END_DATE = datetime.now().date()
@@ -142,11 +143,21 @@ class IdoxSpider(BaseSpider):
             description = result.css(".summaryLinkTextClamp::text").get()
             self.logger.info(f"Found application: {description}")
 
-        for result in search_results:
-            self.logger.info(f"heading into {result.css("a::attr(href)").get()}")
             if self.applications_scraped >= self.limit:
                 self.logger.info(f"Reached the limit of {self.limit} applications")
                 return
+
+            url = result.css("a::attr(href)").get()
+            if not url:
+                self.logger.error(f"Failed to parse url from {result}")
+                continue
+
+            url = response.urljoin(url)
+
+            existing_application = select_planning_application_by_url(url)
+            if existing_application and not existing_application.is_active:
+                self.logger.info(f"Application already exists: {existing_application.url}")
+                continue
 
             yield from self._parse_single_result(result, response)
 
@@ -211,6 +222,10 @@ class IdoxSpider(BaseSpider):
         item.address = self._get_horizontal_table_value(summary_table, "Address")
         item.proposal = self._get_horizontal_table_value(summary_table, "Proposal")
         item.status = self._get_horizontal_table_value(summary_table, "Status")
+        item.decision = self._get_horizontal_table_value(summary_table, "Decision")
+        decision_issued_date = self._get_horizontal_table_value(summary_table, "Decision Issued Date")
+        if decision_issued_date:
+            item.decision_issued_date = datetime.strptime(decision_issued_date, "%a %d %b %Y")
         item.appeal_status = self._get_horizontal_table_value(summary_table, "Appeal Status")
         item.appeal_decision = self._get_horizontal_table_value(summary_table, "Appeal Decision")
 
@@ -327,16 +342,17 @@ class IdoxSpider(BaseSpider):
 
         if not parsed_response["features"]:
             self.logger.error(f"No features found in response from {response.url}")
+
         if parsed_response["features"][0]["geometry"] is None:
             self.logger.error(f"No geometry found in response from {response.url}")
-        if parsed_response["features"][0]["properties"] is None:
+        elif parsed_response["features"][0]["properties"] is None:
             self.logger.error(f"No geometry found in response from {response.url}")
-        if parsed_response["features"][0]["properties"]["KEYVAL"] is None:
+        elif parsed_response["features"][0]["properties"]["KEYVAL"] is None:
             self.logger.error(f"No KEYVAL found in response from {response.url}")
-        if parsed_response["features"][0]["properties"]["KEYVAL"] != response.meta["keyval"]:
+        elif parsed_response["features"][0]["properties"]["KEYVAL"] != response.meta["keyval"]:
             self.logger.error(f"KEYVAL mismatch in response from {response.url}")
-
-        item.geometry = json.dumps(parsed_response["features"][0]["geometry"])
+        else:
+            item.geometry = json.dumps(parsed_response["features"][0]["geometry"])
 
         meta = response.meta
         meta["geometry"] = item
@@ -353,7 +369,7 @@ class IdoxSpider(BaseSpider):
         """
 
         if self.start_date >= date(2000, 1, 1):
-            prev_month_start, prev_month_end = self._previous_month(self.start_date)
+            prev_month_start, prev_month_end = previous_month(self.start_date)
             if prev_month_start >= date(2000, 1, 1):
                 self.start_date = prev_month_start
                 self.end_date = prev_month_end
@@ -364,18 +380,6 @@ class IdoxSpider(BaseSpider):
                     errback=self.handle_error,
                     dont_filter=True,
                 )
-
-    def _previous_month(self, some_date: date) -> Tuple[date, date]:
-        year = some_date.year
-        month = some_date.month
-        if month == 1:
-            new_year = year - 1
-            new_month = 12
-        else:
-            new_year = year
-            new_month = month - 1
-        last_day = monthrange(new_year, new_month)[1]
-        return date(new_year, new_month, 1), date(new_year, new_month, last_day)
 
     def get_cell_for_column_name(self, table: Selector, row: Selector, column_name: str) -> Optional[Selector]:
         value = table.css(f"th:contains('{column_name}')").xpath("count(preceding-sibling::th)").get()
@@ -390,6 +394,16 @@ class IdoxSpider(BaseSpider):
             return "".join(texts).strip()
         return None
 
+    def _is_active(self, status: Optional[str], decision_issued_date: Optional[datetime]) -> bool:
+        # if application is decided and the decision was more than 6 months ago, it is no longer active
+        if (
+            status == "Decided"
+            and decision_issued_date
+            and decision_issued_date < datetime.now() - timedelta(days=185)
+        ):
+            return False
+        return True
+
     def create_planning_application_item(self, meta) -> Generator[IdoxPlanningApplicationItem, None, None]:
         url: str = meta["url"]
         idox_key_val: str = meta["keyval"]
@@ -397,6 +411,7 @@ class IdoxSpider(BaseSpider):
         details_further_information: IdoxPlanningApplicationDetailsFurtherInformation = meta[
             "details_further_information"
         ]
+        is_active = self._is_active(details_summary.decision, details_summary.decision_issued_date)
         documents: List[PlanningApplicationDocumentsDocument] = meta["documents"]
         geometry: IdoxPlanningApplicationGeometry = meta["geometry"]
 
@@ -422,6 +437,7 @@ class IdoxSpider(BaseSpider):
             applicant_name=details_further_information.applicant_name,
             applicant_address=details_further_information.applicant_address,
             environmental_assessment_requested=details_further_information.environmental_assessment_requested,
+            is_active=is_active,
             documents=documents,
             geometry=geometry,
         )
