@@ -16,6 +16,11 @@ username = getenv("POSTGRES_USER")
 password = getenv("POSTGRES_PASSWORD")
 database = getenv("POSTGRES_DB")
 
+print(f"HOSTNAME: {hostname}")
+print(f"USERNAME: {username}")
+print(f"PASSWORD: {password}")
+print(f"DATABASE: {database}")
+
 
 def get_connection():
     return psycopg.connect(host=hostname, dbname=database, user=username, password=password)
