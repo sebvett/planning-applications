@@ -1,4 +1,3 @@
-from datetime import datetime
 from typing import Optional
 
 import psycopg
@@ -11,19 +10,12 @@ from planning_applications.items import (
 )
 from planning_applications.utils import getenv, to_datetime_or_none
 
-hostname = getenv("POSTGRES_HOST")
-username = getenv("POSTGRES_USER")
-password = getenv("POSTGRES_PASSWORD")
-database = getenv("POSTGRES_DB")
-
-print(f"HOSTNAME: {hostname}")
-print(f"USERNAME: {username}")
-print(f"PASSWORD: {password}")
-print(f"DATABASE: {database}")
+database_url = getenv("DATABASE_URL")
+print(f"DATABASE_URL: {database_url}")
 
 
 def get_connection():
-    return psycopg.connect(host=hostname, dbname=database, user=username, password=password)
+    return psycopg.connect(database_url)
 
 
 def get_cursor(connection):

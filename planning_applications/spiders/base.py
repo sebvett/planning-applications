@@ -2,7 +2,6 @@ import enum
 from typing import List, cast
 
 import scrapy
-from scrapy.exceptions import CloseSpider
 from twisted.python.failure import Failure
 
 

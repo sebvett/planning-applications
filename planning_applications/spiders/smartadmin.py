@@ -4,7 +4,6 @@ from typing import Dict, Generator, List, Optional
 
 import scrapy
 import scrapy.exceptions
-from parsel.selector import Selector
 from scrapy.http.request import Request
 from scrapy.http.response import Response
 from scrapy.http.response.text import TextResponse

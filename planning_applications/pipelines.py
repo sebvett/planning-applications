@@ -1,5 +1,3 @@
-import psycopg
-
 from planning_applications.db import (
     get_connection,
     get_cursor,
