@@ -6,7 +6,7 @@ import pydantic
 import scrapy
 
 
-class applicationStatus(Enum):
+class ApplicationStatus(Enum):
     ALL = ""
     APPEAL_DECIDED = "Appeal decided"
     APPEAL_LODGED = "Appeal lodged"
@@ -30,7 +30,7 @@ class PlanningApplication(pydantic.BaseModel):
     validated_date: datetime
     address: Optional[str] = None
     description: Optional[str] = None
-    application_status: applicationStatus
+    application_status: ApplicationStatus
     application_decision: Optional[str] = None
     application_decision_date: Optional[datetime] = None
     appeal_status: Optional[str] = None

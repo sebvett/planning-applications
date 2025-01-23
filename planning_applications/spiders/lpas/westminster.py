@@ -21,8 +21,8 @@ class WestminsterSpider(IdoxSpider):
             ).get(),
             "_csrf": response.css("input[name='_csrf']::attr(value)").get(),
             "caseAddressType": "Application",
-            "date(applicationValidatedStart)": self.formatted_start_date,
-            "date(applicationValidatedEnd)": self.formatted_end_date,
+            "date(applicationValidatedStart)": self.start_date.strftime("%d/%m/%Y"),
+            "date(applicationValidatedEnd)": self.end_date.strftime("%d/%m/%Y"),
             "searchType": "Application",
         }
 
