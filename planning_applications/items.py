@@ -108,6 +108,7 @@ class IdoxPlanningApplicationDetailsSummary(pydantic.BaseModel):
 
 class IdoxPlanningApplicationDetailsFurtherInformation(pydantic.BaseModel):
     application_type: Optional[str] = None
+    actual_decision_level: Optional[str] = None
     expected_decision_level: Optional[str] = None
     case_officer: Optional[str] = None
     parish: Optional[str] = None
@@ -152,6 +153,7 @@ class IdoxPlanningApplicationItem(scrapy.Item):
     appeal_status = scrapy.Field()
     appeal_decision = scrapy.Field()
     application_type = scrapy.Field()
+    actual_decision_level = scrapy.Field()
     expected_decision_level = scrapy.Field()
     case_officer = scrapy.Field()
     parish = scrapy.Field()

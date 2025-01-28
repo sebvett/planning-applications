@@ -248,6 +248,7 @@ class IdoxSpider(BaseSpider):
         details_table = response.css("#applicationDetails")[0]
 
         item.application_type = self._get_horizontal_table_value(details_table, "Application Type")
+        item.actual_decision_level = self._get_horizontal_table_value(details_table, "Actual Decision Level")
         item.expected_decision_level = self._get_horizontal_table_value(details_table, "Expected Decision Level")
         item.case_officer = self._get_horizontal_table_value(details_table, "Case Officer")
         item.parish = self._get_horizontal_table_value(details_table, "Parish")
@@ -337,26 +338,29 @@ class IdoxSpider(BaseSpider):
         self.logger.info(f"Parsing ArcGIS for application at {response.meta['url']}")
 
         parsed_response = json.loads(response.text)
-
         item = IdoxPlanningApplicationGeometry(reference=response.meta["details_summary"].reference, geometry=None)
 
-        if not parsed_response["features"]:
+        if not parsed_response.get("features"):
             self.logger.error(f"No features found in response from {response.url}")
+            meta = response.meta
+            meta["geometry"] = item
+            yield from self.create_planning_application_item(meta)
+            return
 
-        if parsed_response["features"][0]["geometry"] is None:
+        feature = parsed_response["features"][0]
+        if not feature.get("geometry"):
             self.logger.error(f"No geometry found in response from {response.url}")
-        elif parsed_response["features"][0]["properties"] is None:
-            self.logger.error(f"No geometry found in response from {response.url}")
-        elif parsed_response["features"][0]["properties"]["KEYVAL"] is None:
+        elif not feature.get("properties"):
+            self.logger.error(f"No properties found in response from {response.url}")
+        elif not feature["properties"].get("KEYVAL"):
             self.logger.error(f"No KEYVAL found in response from {response.url}")
-        elif parsed_response["features"][0]["properties"]["KEYVAL"] != response.meta["keyval"]:
+        elif feature["properties"]["KEYVAL"] != response.meta["keyval"]:
             self.logger.error(f"KEYVAL mismatch in response from {response.url}")
         else:
-            item.geometry = json.dumps(parsed_response["features"][0]["geometry"])
+            item.geometry = json.dumps(feature["geometry"])
 
         meta = response.meta
         meta["geometry"] = item
-
         yield from self.create_planning_application_item(meta)
 
     # Helpers
@@ -389,10 +393,10 @@ class IdoxSpider(BaseSpider):
         return row.xpath(f"./td[{column_index + 1}]")[0]
 
     def _get_horizontal_table_value(self, table: Selector, column_name: str):
-        texts = table.xpath(f".//th[contains(text(), '{column_name}')]/following-sibling::td/text()").get()
-        if texts:
-            return "".join(texts).strip()
-        return None
+        xpath_expr = f".//tr[th[normalize-space(text()) = '{column_name}']]/td//text()"
+        raw_text = table.xpath(xpath_expr).getall()
+        value = " ".join(t.strip() for t in raw_text if t.strip())
+        return value
 
     def _is_active(self, status: Optional[str], decision_issued_date: Optional[datetime]) -> bool:
         # if application is decided and the decision was more than 6 months ago, it is no longer active
@@ -425,9 +429,12 @@ class IdoxSpider(BaseSpider):
             address=details_summary.address,
             proposal=details_summary.proposal,
             status=details_summary.status,
+            decision=details_summary.decision,
+            decision_issued_date=details_summary.decision_issued_date,
             appeal_status=details_summary.appeal_status,
             appeal_decision=details_summary.appeal_decision,
             application_type=details_further_information.application_type,
+            actual_decision_level=details_further_information.actual_decision_level,
             expected_decision_level=details_further_information.expected_decision_level,
             case_officer=details_further_information.case_officer,
             parish=details_further_information.parish,
