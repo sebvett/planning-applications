@@ -6,6 +6,8 @@ import psycopg
 from planning_applications.items import (
     IdoxPlanningApplicationGeometry,
     PlanningApplication,
+    PlanningApplicationAppealDocumentItem,
+    PlanningApplicationAppealItem,
     PlanningApplicationDocumentsDocument,
     PlanningApplicationItem,
 )
@@ -273,6 +275,191 @@ def upsert_planning_application_geometry(
             RETURNING uuid;
 """,
         (uuid, geometry.reference, geometry.geometry),
+    )
+
+    row = cursor.fetchone()
+    if not row:
+        raise ValueError("No row returned from the upsert query!")
+    return row[0]
+
+
+# CREATE TABLE
+#     public.planning_application_appeals (
+#         uuid uuid DEFAULT public.uuid_generate_v4() NOT NULL,
+#         lpa CHARACTER VARYING(255) NOT NULL,
+#         reference CHARACTER VARYING(255) NOT NULL,
+#         case_id INTEGER NOT NULL,
+#         url TEXT NOT NULL,
+#         appellant_name CHARACTER VARYING(255),
+#         agent_name CHARACTER VARYING(255),
+#         site_address CHARACTER VARYING(255),
+#         case_type CHARACTER VARYING(255),
+#         case_officer CHARACTER VARYING(255),
+#         procedure CHARACTER VARYING(255),
+#         status CHARACTER VARYING(255),
+#         decision CHARACTER VARYING(255),
+#         start_date DATE,
+#         questionnaire_due_date DATE,
+#         statement_due_date DATE,
+#         interested_party_comments_due_date DATE,
+#         final_comments_due_date DATE,
+#         inquiry_evidence_due_date DATE,
+#         event_date DATE,
+#         decision_date DATE,
+#         linked_case_ids INTEGER[],
+#         created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL,
+#         updated_at TIMESTAMP WITHOUT TIME ZONE NOT NULL
+#     );
+
+# CREATE TABLE
+#     public.planning_application_appeals_documents (
+#         uuid uuid DEFAULT public.uuid_generate_v4() NOT NULL,
+#         appeal_case_id INTEGER NOT NULL,
+#         reference CHARACTER VARYING(255),
+#         name CHARACTER VARYING(255),
+#         url TEXT NOT NULL,
+#         created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL,
+#         updated_at TIMESTAMP WITHOUT TIME ZONE NOT NULL
+#     );
+
+
+def upsert_planning_application_appeal(cursor: psycopg.Cursor, item: PlanningApplicationAppealItem) -> str:
+    cursor.execute(
+        """
+        INSERT INTO planning_application_appeals (
+            lpa,
+            reference,
+            case_id,
+            url,
+            appellant_name,
+            agent_name,
+            site_address,
+            case_type,
+            case_officer,
+            procedure,
+            status,
+            decision,
+            start_date,
+            questionnaire_due_date,
+            statement_due_date,
+            interested_party_comments_due_date,
+            final_comments_due_date,
+            inquiry_evidence_due_date,
+            event_date,
+            decision_date,
+            linked_case_ids,
+            first_imported_at,
+            last_imported_at
+        )
+        VALUES (
+            %(lpa)s,
+            %(reference)s,
+            %(case_id)s,
+            %(url)s,
+            %(appellant_name)s,
+            %(agent_name)s,
+            %(site_address)s,
+            %(case_type)s,
+            %(case_officer)s,
+            %(procedure)s,
+            %(status)s,
+            %(decision)s,
+            %(start_date)s,
+            %(questionnaire_due_date)s,
+            %(statement_due_date)s,
+            %(interested_party_comments_due_date)s,
+            %(final_comments_due_date)s,
+            %(inquiry_evidence_due_date)s,
+            %(event_date)s,
+            %(decision_date)s,
+            %(linked_case_ids)s,
+            CURRENT_TIMESTAMP,
+            CURRENT_TIMESTAMP
+        )
+        ON CONFLICT (case_id) DO UPDATE SET
+            reference = EXCLUDED.reference,
+            url = EXCLUDED.url,
+            appellant_name = EXCLUDED.appellant_name,
+            agent_name = EXCLUDED.agent_name,
+            site_address = EXCLUDED.site_address,
+            case_type = EXCLUDED.case_type,
+            case_officer = EXCLUDED.case_officer,
+            procedure = EXCLUDED.procedure,
+            status = EXCLUDED.status,
+            decision = EXCLUDED.decision,
+            start_date = EXCLUDED.start_date,
+            questionnaire_due_date = EXCLUDED.questionnaire_due_date,
+            statement_due_date = EXCLUDED.statement_due_date,
+            interested_party_comments_due_date = EXCLUDED.interested_party_comments_due_date,
+            final_comments_due_date = EXCLUDED.final_comments_due_date,
+            inquiry_evidence_due_date = EXCLUDED.inquiry_evidence_due_date,
+            event_date = EXCLUDED.event_date,
+            decision_date = EXCLUDED.decision_date,
+            linked_case_ids = EXCLUDED.linked_case_ids,
+            last_imported_at = CURRENT_TIMESTAMP
+        RETURNING uuid;
+        """,
+        {
+            "lpa": item["lpa"],
+            "reference": item["reference"],
+            "case_id": item["case_id"],
+            "url": item["url"],
+            "appellant_name": item["appellant_name"],
+            "agent_name": item["agent_name"],
+            "site_address": item["site_address"],
+            "case_type": item["case_type"],
+            "case_officer": item["case_officer"],
+            "procedure": item["procedure"],
+            "status": item["status"],
+            "decision": item["decision"],
+            "start_date": item["start_date"],
+            "questionnaire_due_date": item["questionnaire_due_date"],
+            "statement_due_date": item["statement_due_date"],
+            "interested_party_comments_due_date": item["interested_party_comments_due_date"],
+            "final_comments_due_date": item["final_comments_due_date"],
+            "inquiry_evidence_due_date": item["inquiry_evidence_due_date"],
+            "event_date": item["event_date"],
+            "decision_date": item["decision_date"],
+            "linked_case_ids": item["linked_case_ids"],
+        },
+    )
+
+    row = cursor.fetchone()
+    if not row:
+        raise ValueError("No row returned from the upsert query!")
+    return row[0]
+
+
+def upsert_planning_application_appeal_document(
+    cursor: psycopg.Cursor, item: PlanningApplicationAppealDocumentItem
+) -> str:
+    cursor.execute(
+        """
+        INSERT INTO planning_application_appeals_documents (
+            planning_application_appeal_uuid,
+            appeal_case_id,
+            reference,
+            name,
+            url
+        )
+        VALUES (
+            (SELECT uuid FROM planning_application_appeals WHERE case_id = %(appeal_case_id)s),
+            %(appeal_case_id)s,
+            %(reference)s,
+            %(name)s,
+            %(url)s
+        )
+        ON CONFLICT (url) DO UPDATE SET
+            name = EXCLUDED.name,
+            last_imported_at = NOW()
+        RETURNING uuid;
+        """,
+        {
+            "appeal_case_id": item["appeal_case_id"],
+            "reference": item["reference"],
+            "name": item["name"],
+            "url": item["url"],
+        },
     )
 
     row = cursor.fetchone()

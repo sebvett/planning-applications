@@ -16,8 +16,16 @@ dependencies = [
     "psycopg>=3.2.3",
     "scrapeops-scrapy>=0.5.6",
     "rich>=13.9.4",
+    "parsel>=1.8.1",
+    "pytest>=7.4.3",
 ]
 
 [tool.ruff]
 line-length = 119
 lint.ignore = ["F401"]
+
+[tool.pytest]
+pythonpath = "."
+
+[tool.pytest.ini_options]
+pythonpath = "."

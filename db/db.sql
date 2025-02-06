@@ -1,3 +1,5 @@
+CREATE EXTENSION IF NOT EXISTS "postgis";
+
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 DROP TABLE IF EXISTS public.planning_application_documents CASCADE;
@@ -5,6 +7,10 @@ DROP TABLE IF EXISTS public.planning_application_documents CASCADE;
 DROP TABLE IF EXISTS public.planning_application_geometries CASCADE;
 
 DROP TABLE IF EXISTS public.planning_applications CASCADE;
+
+DROP TABLE IF EXISTS public.planning_application_appeals CASCADE;
+
+DROP TABLE IF EXISTS public.planning_application_appeals_documents CASCADE;
 
 CREATE TABLE
     public.planning_applications (
@@ -71,4 +77,50 @@ CREATE TABLE
         CONSTRAINT planning_application_geometries_pkey PRIMARY KEY (uuid),
         CONSTRAINT planning_application_geometries_planning_application_uuid_reference_key UNIQUE (planning_application_uuid, reference),
         FOREIGN KEY (planning_application_uuid) REFERENCES public.planning_applications (uuid)
+    );
+
+CREATE TABLE
+    public.planning_application_appeals (
+        uuid uuid DEFAULT public.uuid_generate_v4() NOT NULL,
+        lpa CHARACTER VARYING(255) NOT NULL,
+        reference CHARACTER VARYING(255) NOT NULL,
+        case_id INTEGER NOT NULL,
+        url TEXT NOT NULL,
+        appellant_name CHARACTER VARYING(255),
+        agent_name CHARACTER VARYING(255),
+        site_address CHARACTER VARYING(255),
+        case_type CHARACTER VARYING(255),
+        case_officer CHARACTER VARYING(255),
+        procedure CHARACTER VARYING(255),
+        status CHARACTER VARYING(255),
+        decision CHARACTER VARYING(255),
+        start_date DATE,
+        questionnaire_due_date DATE,
+        statement_due_date DATE,
+        interested_party_comments_due_date DATE,
+        final_comments_due_date DATE,
+        inquiry_evidence_due_date DATE,
+        event_date DATE,
+        decision_date DATE,
+        linked_case_ids INTEGER[],
+        first_imported_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        last_imported_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        CONSTRAINT planning_application_appeals_pkey PRIMARY KEY (uuid),
+        CONSTRAINT planning_application_appeals_case_id_key UNIQUE (case_id)
+    );
+
+CREATE TABLE
+    public.planning_application_appeals_documents (
+        uuid uuid DEFAULT public.uuid_generate_v4() NOT NULL,
+        planning_application_appeal_uuid uuid NOT NULL,
+        appeal_case_id INTEGER NOT NULL,
+        reference CHARACTER VARYING(255),
+        name CHARACTER VARYING(255),
+        url TEXT NOT NULL,
+        first_imported_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        last_imported_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        CONSTRAINT planning_application_appeals_documents_pkey PRIMARY KEY (uuid),
+        CONSTRAINT planning_application_appeals_documents_planning_application_appeal_uuid_key UNIQUE (planning_application_appeal_uuid),
+        CONSTRAINT planning_application_appeals_documents_url_key UNIQUE (url),
+        FOREIGN KEY (planning_application_appeal_uuid) REFERENCES public.planning_application_appeals (uuid)
     );

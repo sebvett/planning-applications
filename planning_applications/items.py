@@ -153,3 +153,69 @@ class IdoxPlanningApplicationItem(scrapy.Item):
     is_active = scrapy.Field()
     documents = scrapy.Field()
     geometry = scrapy.Field()
+
+
+# ---------------------------------------------------------------------------------------------------------------------
+# Appeals
+
+
+class PlanningApplicationAppeal(pydantic.BaseModel):
+    lpa: str
+    url: str
+    reference: str
+    case_id: int
+    appellant_name: Optional[str] = None
+    agent_name: Optional[str] = None
+    site_address: Optional[str] = None
+    case_type: Optional[str] = None
+    case_officer: Optional[str] = None
+    procedure: Optional[str] = None
+    status: Optional[str] = None
+    decision: Optional[str] = None
+    start_date: Optional[datetime] = None
+    questionnaire_due_date: Optional[datetime] = None
+    statement_due_date: Optional[datetime] = None
+    interested_party_comments_due_date: Optional[datetime] = None
+    final_comments_due_date: Optional[datetime] = None
+    inquiry_evidence_due_date: Optional[datetime] = None
+    event_date: Optional[datetime] = None
+    decision_date: Optional[datetime] = None
+    linked_case_ids: Optional[List[int]] = None
+
+
+class PlanningApplicationAppealDocument(pydantic.BaseModel):
+    appeal_case_id: int
+    reference: str
+    name: str
+    url: str
+
+
+class PlanningApplicationAppealItem(scrapy.Item):
+    lpa = scrapy.Field()
+    url = scrapy.Field()
+    reference = scrapy.Field()
+    case_id = scrapy.Field()
+    appellant_name = scrapy.Field()
+    agent_name = scrapy.Field()
+    site_address = scrapy.Field()
+    case_type = scrapy.Field()
+    case_officer = scrapy.Field()
+    procedure = scrapy.Field()
+    status = scrapy.Field()
+    decision = scrapy.Field()
+    start_date = scrapy.Field()
+    questionnaire_due_date = scrapy.Field()
+    statement_due_date = scrapy.Field()
+    interested_party_comments_due_date = scrapy.Field()
+    final_comments_due_date = scrapy.Field()
+    inquiry_evidence_due_date = scrapy.Field()
+    event_date = scrapy.Field()
+    decision_date = scrapy.Field()
+    linked_case_ids = scrapy.Field()
+
+
+class PlanningApplicationAppealDocumentItem(scrapy.Item):
+    appeal_case_id = scrapy.Field()
+    reference = scrapy.Field()
+    name = scrapy.Field()
+    url = scrapy.Field()
