@@ -38,7 +38,7 @@ class SmartAdminSpider(BaseSpider):
             self.filter_status = ApplicationStatus(self.filter_status)
 
         if self.start_date > self.end_date:
-            raise ValueError(f"start_date {self.start_date} must be earlier than to_date {self.end_date}")
+            raise ValueError(f"start_date {self.start_date} must be earlier than end_date {self.end_date}")
 
     def start_requests(self) -> Generator[Request, None, None]:
         self.logger.info(
