@@ -43,6 +43,18 @@ To do this, set `POSTGRES_HOST=db` in the .env file.
 
 Then run `make run lpa=<LPA_NAME>` to run the scraper.
 
+### Running scraper in Docker with a separate database
+
+Change your your POSTGRES_HOST from 127.0.0.1 to host.docker.internal in the .env file.
+
+Then run:
+
+```bash
+docker-compose build scraper
+
+docker-compose run --rm --no-deps scraper --lpas-from-earliest sheffield westminster cambridge
+```
+
 ### Running the scraper outside of Docker
 
 If you are actively developing, you probably don't want to have to rebuild the scrapy container every time you make a change.

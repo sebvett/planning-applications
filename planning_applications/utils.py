@@ -28,12 +28,11 @@ def previous_month(some_date: date) -> Tuple[date, date]:
     return date(new_year, new_month, 1), date(new_year, new_month, last_day)
 
 
-def to_datetime_or_none(value: Optional[str]) -> Optional[datetime]:
-    # If it's None, just return None
+def to_datetime_or_none(value: Optional[str | datetime | date]) -> Optional[datetime]:
     if value is None:
         return None
-    # If it's already a datetime, just return it
     if isinstance(value, datetime):
         return value
-    # Otherwise, assume it's a string and parse
+    if isinstance(value, date):
+        return datetime.combine(value, datetime.min.time())
     return datetime.fromisoformat(value)
