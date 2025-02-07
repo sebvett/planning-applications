@@ -1,3 +1,4 @@
+from datetime import date, datetime
 from typing import Optional
 
 import psycopg
@@ -8,6 +9,7 @@ from planning_applications.items import (
     PlanningApplicationDocumentsDocument,
     PlanningApplicationItem,
 )
+from planning_applications.settings import DEFAULT_DATE_FORMAT
 from planning_applications.utils import getenv, to_datetime_or_none
 
 database_url = getenv("DATABASE_URL")
@@ -91,6 +93,32 @@ def select_planning_application_by_url(url: str) -> Optional[PlanningApplication
         environmental_assessment_requested=environmental_assessment_requested,
         is_active=is_active,
     )
+
+
+def get_earliest_date_for_lpa(lpa: str) -> Optional[date]:
+    """Get the earliest validated_date for an LPA from the database."""
+    conn = get_connection()
+
+    with conn.cursor() as cur:
+        cur.execute(
+            """
+            SELECT validated_date FROM planning_applications WHERE lpa = %s ORDER BY validated_date ASC LIMIT 1
+            """,
+            (lpa,),
+        )
+        result = cur.fetchone()
+
+    conn.close()
+
+    if result and result[0]:
+        # Return the first day of the month after the earliest date
+        earliest_date = result[0]
+        if earliest_date.month == 12:
+            return date(earliest_date.year + 1, 1, 1)
+        return date(earliest_date.year, earliest_date.month + 1, 1)
+
+    # If no records found, return None to use default date
+    return None
 
 
 # Upserts

@@ -48,7 +48,7 @@ class IdoxSpider(BaseSpider):
             self.filter_status = ApplicationStatus(self.filter_status)
 
         if self.start_date > self.end_date:
-            raise ValueError(f"start_date {self.start_date} must be earlier than to_date {self.end_date}")
+            raise ValueError(f"start_date {self.start_date} must be earlier than end_date {self.end_date}")
 
     def start_requests(self) -> Generator[Request, None, None]:
         """
@@ -104,7 +104,9 @@ class IdoxSpider(BaseSpider):
         )
 
     def parse_results(self, response: Response):
-        self.logger.info(f"Parsing results from {response.url}")
+        self.logger.info(
+            f"Parsing results from {response.url} (applications scraped so far: {self.applications_scraped})"
+        )
 
         message_box = response.css(".messagebox")
         if message_box:
@@ -144,7 +146,7 @@ class IdoxSpider(BaseSpider):
             self.logger.info(f"Found application: {description}")
 
             if self.applications_scraped >= self.limit:
-                self.logger.info(f"Reached the limit of {self.limit} applications")
+                self.logger.info(f"Reached configured limit of {self.limit} applications, closing spider")
                 return
 
             url = result.css("a::attr(href)").get()
@@ -173,6 +175,7 @@ class IdoxSpider(BaseSpider):
                 dont_filter=True,
             )
         else:
+            self.logger.info("No next page found, checking if we should schedule previous month")
             yield from self._maybe_schedule_previous_month(response)
 
     def _parse_single_result(self, result: Selector, response: Response):
