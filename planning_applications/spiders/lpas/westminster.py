@@ -1,4 +1,4 @@
-from typing import List
+from typing import Dict, List
 
 import scrapy
 from scrapy.http.response import Response
@@ -14,7 +14,7 @@ class WestminsterSpider(IdoxSpider):
     start_url: str = f"https://{domain}/online-applications/search.do?action=advanced"
     arcgis_url: str = f"https://{domain}/server/rest/services/PALIVE/LIVEUniformPA_Planning/FeatureServer/2/query"
 
-    def _build_formdata(self, response: Response):
+    def _build_formdata(self, response: Response) -> Dict[str, str | None]:
         return {
             "org.apache.struts.taglib.html.TOKEN": response.css(
                 "input[name='org.apache.struts.taglib.html.TOKEN']::attr(value)"
@@ -31,5 +31,10 @@ class WestminsterSpider(IdoxSpider):
             raise ValueError("Response must be a TextResponse")
 
         yield scrapy.FormRequest.from_response(
-            response, formid="advancedSearchForm", formdata=formdata, callback=self.parse_results
+            response,
+            formdata=formdata,
+            callback=self.parse_results,
+            meta=response.meta,
+            dont_filter=True,
+            formid="advancedSearchForm",
         )

@@ -41,7 +41,9 @@ class IdoxPlanningApplicationPipeline:
             district_reference=idox_item["district_reference"],
             applicant_name=idox_item["applicant_name"],
             applicant_address=idox_item["applicant_address"],
-            environmental_assessment_requested=idox_item["environmental_assessment_requested"],
+            environmental_assessment_requested=idox_item["environmental_assessment_requested"]
+            if idox_item["environmental_assessment_requested"]
+            else None,
             is_active=idox_item["is_active"],
             documents=idox_item["documents"],
             geometry=idox_item["geometry"],

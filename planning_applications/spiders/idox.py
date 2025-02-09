@@ -20,10 +20,6 @@ from planning_applications.items import (
 )
 from planning_applications.settings import DEFAULT_DATE_FORMAT
 from planning_applications.spiders.base import BaseSpider
-from planning_applications.utils import previous_month
-
-DEFAULT_START_DATE = datetime(datetime.now().year, datetime.now().month, 1).date()
-DEFAULT_END_DATE = datetime.now().date()
 
 
 class IdoxSpider(BaseSpider):
@@ -31,8 +27,8 @@ class IdoxSpider(BaseSpider):
     allowed_domains: List[str] = []
     arcgis_url: Optional[str] = None
 
-    start_date: date = DEFAULT_START_DATE
-    end_date: date = DEFAULT_END_DATE
+    start_date: date
+    end_date: date
     filter_status: ApplicationStatus = ApplicationStatus.ALL
 
     def __init__(self, *args, **kwargs):
@@ -96,11 +92,7 @@ class IdoxSpider(BaseSpider):
             raise ValueError("Response must be a TextResponse")
 
         yield scrapy.FormRequest.from_response(
-            response,
-            formdata=formdata,
-            callback=self.parse_results,
-            meta=response.meta,
-            dont_filter=True,
+            response, formdata=formdata, callback=self.parse_results, meta=response.meta, dont_filter=True
         )
 
     def parse_results(self, response: Response):
@@ -123,21 +115,21 @@ class IdoxSpider(BaseSpider):
         if application_tools:
             self.logger.info(f"Only one application found on {response.url}")
             yield from self.parse_details_summary_tab(response)
-            yield from self._maybe_schedule_previous_month(response)
+            yield from self._maybe_schedule_previous_week(response)
             return
 
         # If #searchresults doesn’t exist or is empty => no apps => schedule previous month
         search_results = response.css("#searchresults")
         if not search_results:
             self.logger.info(f"No #searchresults found on {response.url}")
-            yield from self._maybe_schedule_previous_month(response)
+            yield from self._maybe_schedule_previous_week(response)
             return
 
         # If #searchresults exists but is empty => no apps => schedule previous month
         search_results = search_results[0].css(".searchresult")
         if len(search_results) == 0:
             self.logger.info(f"No applications found on {response.url}")
-            yield from self._maybe_schedule_previous_month(response)
+            yield from self._maybe_schedule_previous_week(response)
             return
 
         self.logger.info(f"Found {len(search_results)} applications on {response.url}")
@@ -175,8 +167,8 @@ class IdoxSpider(BaseSpider):
                 dont_filter=True,
             )
         else:
-            self.logger.info("No next page found, checking if we should schedule previous month")
-            yield from self._maybe_schedule_previous_month(response)
+            self.logger.info("No next page found, checking if we should schedule previous week")
+            yield from self._maybe_schedule_previous_week(response)
 
     def _parse_single_result(self, result: Selector, response: Response):
         details_summary_url = result.css("a::attr(href)").get()
@@ -369,23 +361,21 @@ class IdoxSpider(BaseSpider):
     # Helpers
     # -------------------------------------------------------------------------
 
-    def _maybe_schedule_previous_month(self, response: Response):
+    def _maybe_schedule_previous_week(self, response: Response):
         """
-        Revisit the advanced search page, passing the *previous month* date range via meta.
+        Revisit the advanced search page, passing the *previous week* date range via meta.
         Because some sites require a fresh form load and new tokens for each search.
         """
 
         if self.start_date >= date(2000, 1, 1):
-            prev_month_start, prev_month_end = previous_month(self.start_date)
-            if prev_month_start >= date(2000, 1, 1):
-                self.start_date = prev_month_start
-                self.end_date = prev_month_end
-                self.logger.info(f"Scheduling previous month {self.start_date} to {self.end_date}")
+            previous_week_end = self.start_date - timedelta(days=1)
+            previous_week_start = previous_week_end - timedelta(days=7)
+            if previous_week_end >= date(2000, 1, 1):
+                self.start_date = previous_week_start
+                self.end_date = previous_week_end
+                self.logger.info(f"Scheduling previous week {self.start_date} to {self.end_date}")
                 yield Request(
-                    self.start_url,
-                    callback=self._start_new_month,
-                    errback=self.handle_error,
-                    dont_filter=True,
+                    self.start_url, callback=self._start_new_month, errback=self.handle_error, dont_filter=True
                 )
 
     def get_cell_for_column_name(self, table: Selector, row: Selector, column_name: str) -> Optional[Selector]:

@@ -83,7 +83,7 @@ def run_spiders(
                 logger.info(f"Earliest date on record for {spider_name} is {earliest_date}")
 
                 start_date = earliest_date + relativedelta.relativedelta(months=1)
-                candidate_end_date = start_date + relativedelta.relativedelta(months=1)
+                candidate_end_date = start_date + relativedelta.relativedelta(weeks=1)
                 end_date = candidate_end_date if candidate_end_date >= date.today() else date.today()
 
                 spider_kwargs["start_date"] = start_date.strftime(DEFAULT_DATE_FORMAT)
@@ -91,7 +91,7 @@ def run_spiders(
             else:
                 logger.info(f"No earliest date on record for {spider_name}. Using most recent month")
 
-                start_date = date.today() - relativedelta.relativedelta(months=1)
+                start_date = date.today() - relativedelta.relativedelta(weeks=1)
                 end_date = date.today()
 
                 spider_kwargs["start_date"] = start_date.strftime(DEFAULT_DATE_FORMAT)
