@@ -1,21 +1,8 @@
 from datetime import datetime
-from enum import Enum
 from typing import List, Optional
 
 import pydantic
 import scrapy
-
-
-class ApplicationStatus(Enum):
-    ALL = ""
-    APPEAL_DECIDED = "Appeal decided"
-    APPEAL_LODGED = "Appeal lodged"
-    AWAITING_DECISION = "Awaiting decision"
-    DECIDED = "Decided"
-    REGISTERED = "Registered"
-    UNKNOWN = "Unknown"
-    WITHDRAWN = "Withdrawn"
-
 
 # ---------------------------------------------------------------------------------------------------------------------
 # Base
@@ -30,7 +17,7 @@ class PlanningApplication(pydantic.BaseModel):
     validated_date: datetime
     address: Optional[str] = None
     description: Optional[str] = None
-    application_status: ApplicationStatus
+    application_status: Optional[str] = None
     application_decision: Optional[str] = None
     application_decision_date: Optional[datetime] = None
     appeal_status: Optional[str] = None

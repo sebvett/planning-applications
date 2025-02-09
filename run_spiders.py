@@ -5,6 +5,8 @@ from datetime import date, datetime
 from typing import List, Optional, Tuple
 
 from dateutil import relativedelta
+from rich.console import Console
+from rich.table import Table
 from scrapy.crawler import CrawlerProcess
 from scrapy.utils.project import get_project_settings
 
@@ -65,43 +67,67 @@ def run_spiders(
     settings = get_project_settings()
     process = CrawlerProcess(settings)
 
+    spider_dates = []
+
     for spider_name in spider_names:
         spider_kwargs = {}
 
         if lpa_dates:
             lpa_config = next((x for x in lpa_dates if x[0] == spider_name), None)
             if lpa_config:
-                spider_kwargs["start_date"] = lpa_config[1].strftime(DEFAULT_DATE_FORMAT)
-                spider_kwargs["end_date"] = lpa_config[2].strftime(DEFAULT_DATE_FORMAT)
-                logger.info(f"Adding spider {spider_name} with dates {lpa_config[1]} to {lpa_config[2]}")
+                mode = "LPA Dates"
+                start_date_dt = lpa_config[1]
+                end_date_dt = lpa_config[2]
+                spider_kwargs["start_date"] = start_date_dt.strftime(DEFAULT_DATE_FORMAT)
+                spider_kwargs["end_date"] = end_date_dt.strftime(DEFAULT_DATE_FORMAT)
+
+                logger.info(f"Adding spider {spider_name} with dates {start_date_dt} to {end_date_dt}")
             else:
                 logger.info(f"Skipping spider {spider_name} - not in LPA dates list")
                 continue
         elif from_earliest:
             earliest_date = get_earliest_date_for_lpa(spider_name)
             if earliest_date:
+                mode = "From Earliest"
                 logger.info(f"Earliest date on record for {spider_name} is {earliest_date}")
 
-                start_date = earliest_date + relativedelta.relativedelta(months=1)
-                candidate_end_date = start_date + relativedelta.relativedelta(weeks=1)
-                end_date = candidate_end_date if candidate_end_date >= date.today() else date.today()
+                start_date_dt = min(earliest_date + relativedelta.relativedelta(months=1), date.today())
+                end_date_dt = min(start_date_dt + relativedelta.relativedelta(weeks=1), date.today())
 
-                spider_kwargs["start_date"] = start_date.strftime(DEFAULT_DATE_FORMAT)
-                spider_kwargs["end_date"] = end_date.strftime(DEFAULT_DATE_FORMAT)
+                spider_kwargs["start_date"] = start_date_dt.strftime(DEFAULT_DATE_FORMAT)
+                spider_kwargs["end_date"] = end_date_dt.strftime(DEFAULT_DATE_FORMAT)
+
+                logger.info(f"Adding spider {spider_name} with dates {start_date_dt} to {end_date_dt}")
             else:
+                mode = "From Earliest (Default)"
+
                 logger.info(f"No earliest date on record for {spider_name}. Using most recent month")
 
-                start_date = date.today() - relativedelta.relativedelta(weeks=1)
-                end_date = date.today()
+                start_date_dt = date.today() - relativedelta.relativedelta(weeks=1)
+                end_date_dt = date.today()
 
-                spider_kwargs["start_date"] = start_date.strftime(DEFAULT_DATE_FORMAT)
-                spider_kwargs["end_date"] = end_date.strftime(DEFAULT_DATE_FORMAT)
+                spider_kwargs["start_date"] = start_date_dt.strftime(DEFAULT_DATE_FORMAT)
+                spider_kwargs["end_date"] = end_date_dt.strftime(DEFAULT_DATE_FORMAT)
 
-            logger.info(f"Adding spider {spider_name} with dates {start_date} to {end_date}")
+                logger.info(f"Adding spider {spider_name} with dates {start_date_dt} to {end_date_dt}")
         else:
-            logger.info(f"Adding spider {spider_name} with default dates")
+            logger.info(f"No option passed. Skipping spider {spider_name}")
+            continue
 
+        spider_dates.append((spider_name, mode, str(earliest_date), str(start_date_dt), str(end_date_dt)))
         process.crawl(spider_name, **spider_kwargs)
+
+    table = Table(title="Spider Dates Summary")
+    table.add_column("Spider", style="cyan")
+    table.add_column("Mode", style="magenta", justify="center")
+    table.add_column("Earliest Date on Record", style="green", justify="center")
+    table.add_column("Start Date", justify="center")
+    table.add_column("End Date", justify="center")
+    for name, mode, earliest_date, start, end in spider_dates:
+        table.add_row(name, mode, earliest_date, start, end)
+
+    console = Console()
+    console.print(table)
 
     logger.info("Starting crawl process...")
     process.start()

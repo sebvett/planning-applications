@@ -5,7 +5,7 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.12.3"
 dependencies = [
-    "scrapy-zyte-api>=0.25.1",
+    "scrapy-zyte-api>=0.27",
     "scrapy>=2.12.0",
     "python-dotenv>=1.0.1",
     "coloredlogs>=15.0.1",
@@ -15,11 +15,9 @@ dependencies = [
     "mkdocs-material>=9.5.47",
     "psycopg>=3.2.3",
     "scrapeops-scrapy>=0.5.6",
+    "rich>=13.9.4",
 ]
 
 [tool.ruff]
 line-length = 119
 lint.ignore = ["F401"]
-
-[tool.uv.sources]
-scrapy-zyte-api = { git = "https://github.com/scrapy-plugins/scrapy-zyte-api.git" }

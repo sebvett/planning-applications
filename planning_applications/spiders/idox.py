@@ -11,7 +11,6 @@ from scrapy.http.response.text import TextResponse
 
 from planning_applications.db import select_planning_application_by_url
 from planning_applications.items import (
-    ApplicationStatus,
     IdoxPlanningApplicationDetailsFurtherInformation,
     IdoxPlanningApplicationDetailsSummary,
     IdoxPlanningApplicationGeometry,
@@ -29,7 +28,6 @@ class IdoxSpider(BaseSpider):
 
     start_date: date
     end_date: date
-    filter_status: ApplicationStatus = ApplicationStatus.ALL
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -40,9 +38,6 @@ class IdoxSpider(BaseSpider):
         if isinstance(self.end_date, str):
             self.end_date = datetime.strptime(self.end_date, DEFAULT_DATE_FORMAT).date()
 
-        if isinstance(self.filter_status, str):
-            self.filter_status = ApplicationStatus(self.filter_status)
-
         if self.start_date > self.end_date:
             raise ValueError(f"start_date {self.start_date} must be earlier than end_date {self.end_date}")
 
@@ -52,26 +47,21 @@ class IdoxSpider(BaseSpider):
         """
         yield Request(
             self.start_url,
-            callback=self._start_new_month,
+            callback=self._start_new_period,
             errback=self.handle_error,
             dont_filter=True,
         )
 
-    def _start_new_month(self, response: Response):
+    def _start_new_period(self, response: Response):
         """
         We are on the advanced search page.
         Now we can 'submit_form' using the date range in response.meta (start_date, end_date).
         """
-        self.logger.info(f"Scheduling new month {self.start_date} to {self.end_date}")
         yield from self.submit_form(response)
 
     def submit_form(self, response: Response) -> Generator[Request, None, None]:
         self.logger.info(f"Submitting search form on {response.url}")
         formdata = self._build_formdata(response)
-
-        if self.filter_status != ApplicationStatus.ALL:
-            formdata["caseStatus"] = self.filter_status.value
-
         yield from self._build_formrequest(response, formdata)
 
     def _build_formdata(self, response: Response) -> Dict[str, str]:
@@ -375,7 +365,7 @@ class IdoxSpider(BaseSpider):
                 self.end_date = previous_week_end
                 self.logger.info(f"Scheduling previous week {self.start_date} to {self.end_date}")
                 yield Request(
-                    self.start_url, callback=self._start_new_month, errback=self.handle_error, dont_filter=True
+                    self.start_url, callback=self._start_new_period, errback=self.handle_error, dont_filter=True
                 )
 
     def get_cell_for_column_name(self, table: Selector, row: Selector, column_name: str) -> Optional[Selector]:
