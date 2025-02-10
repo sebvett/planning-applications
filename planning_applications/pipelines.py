@@ -12,8 +12,8 @@ from planning_applications.db import (
 from planning_applications.items import (
     IdoxPlanningApplicationGeometry,
     IdoxPlanningApplicationItem,
-    PlanningApplicationAppealDocumentItem,
-    PlanningApplicationAppealItem,
+    PlanningApplicationAppeal,
+    PlanningApplicationAppealDocument,
     PlanningApplicationItem,
 )
 
@@ -66,18 +66,18 @@ class PostgresPipeline:
         self.connection = get_connection()
         self.cur = get_cursor(self.connection)
 
-    def process_item(self, item: PlanningApplicationItem | PlanningApplicationAppealItem, spider):
-        if isinstance(item, PlanningApplicationAppealDocumentItem):
+    def process_item(self, item: PlanningApplicationItem | PlanningApplicationAppeal, spider):
+        if isinstance(item, PlanningApplicationAppealDocument):
             return self.process_appeal_case_document_item(item, spider)
 
-        if isinstance(item, PlanningApplicationAppealItem):
+        if isinstance(item, PlanningApplicationAppeal):
             return self.process_appeal_case_item(item, spider)
 
         if isinstance(item, PlanningApplicationItem):
             return self.process_planning_application_item(item, spider)
 
-    def process_appeal_case_item(self, item: PlanningApplicationAppealItem, spider):
-        spider.logger.info(f"Inserting planning application appeal {item['reference']}")
+    def process_appeal_case_item(self, item: PlanningApplicationAppeal, spider):
+        spider.logger.info(f"Inserting planning application appeal {item.reference}")
         try:
             _ = upsert_planning_application_appeal(self.cur, item)
             self.connection.commit()
@@ -86,8 +86,8 @@ class PostgresPipeline:
             spider.logger.error(f"Error inserting appeal case into the database: {e}")
             raise
 
-    def process_appeal_case_document_item(self, item: PlanningApplicationAppealDocumentItem, spider):
-        spider.logger.info(f"Inserting planning application appeal document {item['reference']}")
+    def process_appeal_case_document_item(self, item: PlanningApplicationAppealDocument, spider):
+        spider.logger.info(f"Inserting planning application appeal document {item.reference}")
         try:
             _ = upsert_planning_application_appeal_document(self.cur, item)
             self.connection.commit()

@@ -9,7 +9,7 @@ import scrapy
 from scrapy.http.response import Response
 from scrapy.http.response.text import TextResponse
 
-from planning_applications.items import PlanningApplicationAppealDocumentItem, PlanningApplicationAppealItem
+from planning_applications.items import PlanningApplicationAppeal, PlanningApplicationAppealDocument
 from planning_applications.settings import DEFAULT_DATE_FORMAT
 
 DEFAULT_START_DATE = datetime(datetime.now().year, datetime.now().month, 1).date()
@@ -164,7 +164,7 @@ class AppealsSpider(scrapy.Spider):
                 item_data[date_key] = None
 
         self.logger.info(f"Yielding item for case ID {case_id}")
-        yield PlanningApplicationAppealItem(**item_data)
+        yield PlanningApplicationAppeal(**item_data)
 
         # Does this case have any documents?
         documents_container = response.css("#cphMainContent_labDecisionLink")
@@ -182,9 +182,9 @@ class AppealsSpider(scrapy.Spider):
                     document_id = document_path.split("fileid=")[1].split("&")[0]
                     document_name = documents_anchor.css("::text").get()
 
-                    yield PlanningApplicationAppealDocumentItem(
-                        appeal_case_id=int(case_id),
-                        reference=int(document_id),
+                    yield PlanningApplicationAppealDocument(
+                        appeal_case_id=case_id,
+                        reference=document_id,
                         name=document_name or document_url,
                         url=document_url,
                     )
@@ -210,7 +210,7 @@ class AppealsSpider(scrapy.Spider):
         if not isinstance(response, TextResponse):
             self.logger.error("get_case_ids_for_date_range must be called with a TextResponse")
             return
-        yield from self._find_highest_case_id(response, self.end_date)
+        yield from self._find_highest_case_id(response, self.end_date or datetime.now().date())
 
     def _find_highest_case_id(self, response: TextResponse, date: date):
         yield scrapy.FormRequest.from_response(
@@ -254,7 +254,9 @@ class AppealsSpider(scrapy.Spider):
         self.logger.info(f"Found highest case ID: {highest_case_id}")
         self.to_case_id = highest_case_id
 
-        yield from self._find_lowest_case_id(response.meta["original_response"], self.start_date)
+        yield from self._find_lowest_case_id(
+            response.meta["original_response"], self.start_date or datetime.now().date()
+        )
 
     def _find_lowest_case_id(self, response: TextResponse, date: date):
         yield scrapy.FormRequest.from_response(

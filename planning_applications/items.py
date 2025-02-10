@@ -188,34 +188,3 @@ class PlanningApplicationAppealDocument(pydantic.BaseModel):
     reference: str
     name: str
     url: str
-
-
-class PlanningApplicationAppealItem(scrapy.Item):
-    lpa = scrapy.Field()
-    url = scrapy.Field()
-    reference = scrapy.Field()
-    case_id = scrapy.Field()
-    appellant_name = scrapy.Field()
-    agent_name = scrapy.Field()
-    site_address = scrapy.Field()
-    case_type = scrapy.Field()
-    case_officer = scrapy.Field()
-    procedure = scrapy.Field()
-    status = scrapy.Field()
-    decision = scrapy.Field()
-    start_date = scrapy.Field()
-    questionnaire_due_date = scrapy.Field()
-    statement_due_date = scrapy.Field()
-    interested_party_comments_due_date = scrapy.Field()
-    final_comments_due_date = scrapy.Field()
-    inquiry_evidence_due_date = scrapy.Field()
-    event_date = scrapy.Field()
-    decision_date = scrapy.Field()
-    linked_case_ids = scrapy.Field()
-
-
-class PlanningApplicationAppealDocumentItem(scrapy.Item):
-    appeal_case_id = scrapy.Field()
-    reference = scrapy.Field()
-    name = scrapy.Field()
-    url = scrapy.Field()

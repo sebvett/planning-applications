@@ -6,8 +6,8 @@ import psycopg
 from planning_applications.items import (
     IdoxPlanningApplicationGeometry,
     PlanningApplication,
-    PlanningApplicationAppealDocumentItem,
-    PlanningApplicationAppealItem,
+    PlanningApplicationAppeal,
+    PlanningApplicationAppealDocument,
     PlanningApplicationDocumentsDocument,
     PlanningApplicationItem,
 )
@@ -283,47 +283,7 @@ def upsert_planning_application_geometry(
     return row[0]
 
 
-# CREATE TABLE
-#     public.planning_application_appeals (
-#         uuid uuid DEFAULT public.uuid_generate_v4() NOT NULL,
-#         lpa CHARACTER VARYING(255) NOT NULL,
-#         reference CHARACTER VARYING(255) NOT NULL,
-#         case_id INTEGER NOT NULL,
-#         url TEXT NOT NULL,
-#         appellant_name CHARACTER VARYING(255),
-#         agent_name CHARACTER VARYING(255),
-#         site_address CHARACTER VARYING(255),
-#         case_type CHARACTER VARYING(255),
-#         case_officer CHARACTER VARYING(255),
-#         procedure CHARACTER VARYING(255),
-#         status CHARACTER VARYING(255),
-#         decision CHARACTER VARYING(255),
-#         start_date DATE,
-#         questionnaire_due_date DATE,
-#         statement_due_date DATE,
-#         interested_party_comments_due_date DATE,
-#         final_comments_due_date DATE,
-#         inquiry_evidence_due_date DATE,
-#         event_date DATE,
-#         decision_date DATE,
-#         linked_case_ids INTEGER[],
-#         created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL,
-#         updated_at TIMESTAMP WITHOUT TIME ZONE NOT NULL
-#     );
-
-# CREATE TABLE
-#     public.planning_application_appeals_documents (
-#         uuid uuid DEFAULT public.uuid_generate_v4() NOT NULL,
-#         appeal_case_id INTEGER NOT NULL,
-#         reference CHARACTER VARYING(255),
-#         name CHARACTER VARYING(255),
-#         url TEXT NOT NULL,
-#         created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL,
-#         updated_at TIMESTAMP WITHOUT TIME ZONE NOT NULL
-#     );
-
-
-def upsert_planning_application_appeal(cursor: psycopg.Cursor, item: PlanningApplicationAppealItem) -> str:
+def upsert_planning_application_appeal(cursor: psycopg.Cursor, item: PlanningApplicationAppeal) -> str:
     cursor.execute(
         """
         INSERT INTO planning_application_appeals (
@@ -400,27 +360,27 @@ def upsert_planning_application_appeal(cursor: psycopg.Cursor, item: PlanningApp
         RETURNING uuid;
         """,
         {
-            "lpa": item["lpa"],
-            "reference": item["reference"],
-            "case_id": item["case_id"],
-            "url": item["url"],
-            "appellant_name": item["appellant_name"],
-            "agent_name": item["agent_name"],
-            "site_address": item["site_address"],
-            "case_type": item["case_type"],
-            "case_officer": item["case_officer"],
-            "procedure": item["procedure"],
-            "status": item["status"],
-            "decision": item["decision"],
-            "start_date": item["start_date"],
-            "questionnaire_due_date": item["questionnaire_due_date"],
-            "statement_due_date": item["statement_due_date"],
-            "interested_party_comments_due_date": item["interested_party_comments_due_date"],
-            "final_comments_due_date": item["final_comments_due_date"],
-            "inquiry_evidence_due_date": item["inquiry_evidence_due_date"],
-            "event_date": item["event_date"],
-            "decision_date": item["decision_date"],
-            "linked_case_ids": item["linked_case_ids"],
+            "lpa": item.lpa,
+            "reference": item.reference,
+            "case_id": item.case_id,
+            "url": item.url,
+            "appellant_name": item.appellant_name,
+            "agent_name": item.agent_name,
+            "site_address": item.site_address,
+            "case_type": item.case_type,
+            "case_officer": item.case_officer,
+            "procedure": item.procedure,
+            "status": item.status,
+            "decision": item.decision,
+            "start_date": item.start_date,
+            "questionnaire_due_date": item.questionnaire_due_date,
+            "statement_due_date": item.statement_due_date,
+            "interested_party_comments_due_date": item.interested_party_comments_due_date,
+            "final_comments_due_date": item.final_comments_due_date,
+            "inquiry_evidence_due_date": item.inquiry_evidence_due_date,
+            "event_date": item.event_date,
+            "decision_date": item.decision_date,
+            "linked_case_ids": item.linked_case_ids,
         },
     )
 
@@ -431,7 +391,7 @@ def upsert_planning_application_appeal(cursor: psycopg.Cursor, item: PlanningApp
 
 
 def upsert_planning_application_appeal_document(
-    cursor: psycopg.Cursor, item: PlanningApplicationAppealDocumentItem
+    cursor: psycopg.Cursor, item: PlanningApplicationAppealDocument
 ) -> str:
     cursor.execute(
         """
@@ -455,10 +415,10 @@ def upsert_planning_application_appeal_document(
         RETURNING uuid;
         """,
         {
-            "appeal_case_id": item["appeal_case_id"],
-            "reference": item["reference"],
-            "name": item["name"],
-            "url": item["url"],
+            "appeal_case_id": item.appeal_case_id,
+            "reference": item.reference,
+            "name": item.name,
+            "url": item.url,
         },
     )
 
