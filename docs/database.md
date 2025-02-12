@@ -63,42 +63,42 @@
 
 ## planning_application_appeals
 
-| Column                             | Type         | Nullable | Default            | Foreign Key |
-| ---------------------------------- | ------------ | -------- | ------------------ | ----------- |
-| uuid                               | uuid         | False    | uuid_generate_v4() | NULL        |
-| lpa                                | varchar(255) | False    | NULL               | NULL        |
-| reference                          | varchar(255) | False    | NULL               | NULL        |
-| case_id                            | int          | False    | NULL               | NULL        |
-| url                                | text         | False    | NULL               | NULL        |
-| appellant_name                     | varchar(255) | True     | NULL               | NULL        |
-| agent_name                         | varchar(255) | True     | NULL               | NULL        |
-| site_address                       | varchar(255) | True     | NULL               | NULL        |
-| case_type                          | varchar(255) | True     | NULL               | NULL        |
-| case_officer                       | varchar(255) | True     | NULL               | NULL        |
-| procedure                          | varchar(255) | True     | NULL               | NULL        |
-| status                             | varchar(255) | True     | NULL               | NULL        |
-| decision                           | varchar(255) | True     | NULL               | NULL        |
-| start_date                         | date         | True     | NULL               | NULL        |
-| questionnaire_due_date             | date         | True     | NULL               | NULL        |
-| statement_due_date                 | date         | True     | NULL               | NULL        |
-| interested_party_comments_due_date | date         | True     | NULL               | NULL        |
-| final_comments_due_date            | date         | True     | NULL               | NULL        |
-| inquiry_evidence_due_date          | date         | True     | NULL               | NULL        |
-| event_date                         | date         | True     | NULL               | NULL        |
-| decision_date                      | date         | True     | NULL               | NULL        |
-| linked_case_ids                    | int[]        | True     | NULL               | NULL        |
-| first_imported_at                  | timestamp    | False    | CURRENT_TIMESTAMP  | NULL        |
-| last_imported_at                   | timestamp    | False    | CURRENT_TIMESTAMP  | NULL        |
+| Column                             | Type      | Nullable | Default            | Foreign Key |
+| ---------------------------------- | --------- | -------- | ------------------ | ----------- |
+| uuid                               | uuid      | False    | uuid_generate_v4() | NULL        |
+| lpa                                | text      | False    | NULL               | NULL        |
+| reference                          | text      | False    | NULL               | NULL        |
+| case_id                            | int       | False    | NULL               | NULL        |
+| url                                | text      | False    | NULL               | NULL        |
+| appellant_name                     | text      | True     | NULL               | NULL        |
+| agent_name                         | text      | True     | NULL               | NULL        |
+| site_address                       | text      | True     | NULL               | NULL        |
+| case_type                          | text      | True     | NULL               | NULL        |
+| case_officer                       | text      | True     | NULL               | NULL        |
+| procedure                          | text      | True     | NULL               | NULL        |
+| status                             | text      | True     | NULL               | NULL        |
+| decision                           | text      | True     | NULL               | NULL        |
+| start_date                         | date      | True     | NULL               | NULL        |
+| questionnaire_due_date             | date      | True     | NULL               | NULL        |
+| statement_due_date                 | date      | True     | NULL               | NULL        |
+| interested_party_comments_due_date | date      | True     | NULL               | NULL        |
+| final_comments_due_date            | date      | True     | NULL               | NULL        |
+| inquiry_evidence_due_date          | date      | True     | NULL               | NULL        |
+| event_date                         | date      | True     | NULL               | NULL        |
+| decision_date                      | date      | True     | NULL               | NULL        |
+| linked_case_ids                    | int[]     | True     | NULL               | NULL        |
+| first_imported_at                  | timestamp | False    | CURRENT_TIMESTAMP  | NULL        |
+| last_imported_at                   | timestamp | False    | CURRENT_TIMESTAMP  | NULL        |
 
 ## planning_application_appeals_documents
 
-| Column                           | Type         | Nullable | Default            | Foreign Key                       |
-| -------------------------------- | ------------ | -------- | ------------------ | --------------------------------- |
-| uuid                             | uuid         | False    | uuid_generate_v4() | NULL                              |
-| planning_application_appeal_uuid | uuid         | False    | NULL               | planning_application_appeals.uuid |
-| appeal_case_id                   | int          | False    | NULL               | NULL                              |
-| reference                        | varchar(255) | True     | NULL               | NULL                              |
-| name                             | varchar(255) | True     | NULL               | NULL                              |
-| url                              | text         | False    | NULL               | NULL                              |
-| first_imported_at                | timestamp    | False    | CURRENT_TIMESTAMP  | NULL                              |
-| last_imported_at                 | timestamp    | False    | CURRENT_TIMESTAMP  | NULL                              |
+| Column                           | Type      | Nullable | Default            | Foreign Key                       |
+| -------------------------------- | --------- | -------- | ------------------ | --------------------------------- |
+| uuid                             | uuid      | False    | uuid_generate_v4() | NULL                              |
+| planning_application_appeal_uuid | uuid      | False    | NULL               | planning_application_appeals.uuid |
+| appeal_case_id                   | int       | False    | NULL               | NULL                              |
+| reference                        | text      | True     | NULL               | NULL                              |
+| name                             | text      | True     | NULL               | NULL                              |
+| url                              | text      | False    | NULL               | NULL                              |
+| first_imported_at                | timestamp | False    | CURRENT_TIMESTAMP  | NULL                              |
+| last_imported_at                 | timestamp | False    | CURRENT_TIMESTAMP  | NULL                              |
