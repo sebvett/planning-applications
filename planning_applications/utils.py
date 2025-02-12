@@ -32,3 +32,7 @@ def open_in_browser(response: scrapy.http.response.Response):
         temp.write(response.text.encode("utf-8"))
         temp.seek(0)
         subprocess.run(["open", temp.name])
+
+
+def multiline_css(response: scrapy.http.response.Response, selector: str, join_with: str = "\n") -> str | None:
+    return join_with.join(response.css(selector).getall()) or None

@@ -11,6 +11,7 @@ from scrapy.http.response.text import TextResponse
 
 from planning_applications.items import PlanningApplicationAppeal, PlanningApplicationAppealDocument
 from planning_applications.settings import DEFAULT_DATE_FORMAT
+from planning_applications.utils import multiline_css
 
 DEFAULT_START_DATE = datetime(datetime.now().year, datetime.now().month, 1).date()
 DEFAULT_END_DATE = datetime.now().date()
@@ -88,7 +89,7 @@ class AppealsSpider(scrapy.Spider):
     def issue_requests_for_case_ids(self):
         self.logger.info(f"Issuing requests for case IDs between {self.from_case_id} and {self.to_case_id}")
 
-        for case_id in range(self.from_case_id or EARLIEST_KNOWN_CASE_ID, self.to_case_id or 0):
+        for case_id in range(self.from_case_id or EARLIEST_KNOWN_CASE_ID, (self.to_case_id or 0) + 1):
             yield scrapy.Request(
                 url=f"{self.base_url}/ViewCase.aspx?CaseID={case_id}&CoID=0",
                 callback=self.parse_case,
@@ -122,7 +123,7 @@ class AppealsSpider(scrapy.Spider):
             "case_id": case_id,
             "appellant_name": response.css("#cphMainContent_labName::text").get() or None,
             "agent_name": response.css("#cphMainContent_labAgentName::text").get() or None,
-            "site_address": response.css("#cphMainContent_labSiteAddress::text").get() or None,
+            "site_address": multiline_css(response, "#cphMainContent_labSiteAddress::text"),
             "case_type": response.css("#cphMainContent_labCaseTypeName::text").get() or None,
             "case_officer": response.css("#cphMainContent_labCaseOfficer::text").get() or None,
             "procedure": response.css("#cphMainContent_labProcedure::text").get() or None,
@@ -159,7 +160,7 @@ class AppealsSpider(scrapy.Spider):
             "decision_date",
         ]:
             try:
-                item_data[date_key] = datetime.strptime(item_data[date_key], DEFAULT_DATE_FORMAT).date()
+                item_data[date_key] = datetime.strptime(item_data[date_key], "%d %b %Y").date()
             except ValueError:
                 item_data[date_key] = None
 
