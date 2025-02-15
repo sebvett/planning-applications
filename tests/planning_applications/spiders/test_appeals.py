@@ -1,9 +1,11 @@
 from datetime import date, datetime
+from os import path
 
 import pytest
 from parsel import Selector
 from scrapy.http.response.text import TextResponse
 
+from planning_applications.items import PlanningApplicationAppeal
 from planning_applications.settings import DEFAULT_DATE_FORMAT
 from planning_applications.spiders.appeals import AppealsSpider
 
@@ -47,36 +49,38 @@ def test_spider_initialization_validation():
 
 
 def test_parse_case():
-    html = """
-        <h2 id="cphMainContent_LabelCaseReference">Reference: APP/12345</h2>
-        <span id="cphMainContent_labLPAName">Test Council</span>
-        <span id="cphMainContent_labName">John Doe</span>
-        <span id="cphMainContent_labAgentName">Agent Smith</span>
-#         <span id="cphMainContent_labSiteAddress">123 Test St</span>
-#         <span id="cphMainContent_labCaseTypeName">Planning Appeal</span>
-#         <span id="cphMainContent_labStartDate">2024-01-01</span>
-#         <span id="cphMainContent_labQuestionnaireDueDate">2024-02-01</span>
-#         <span id="cphMainContent_labAppellantLPARepsDueDate">2024-03-01</span>
-#         <span id="cphMainContent_labInterestedPartyCommentsDueDate">2024-04-01</span>
-#         <span id="cphMainContent_labFinalCommentsDueDate">2024-05-01</span>
-#         <span id="cphMainContent_labInquiryEvidenceDueDate">2024-06-01</span>
-#         <span id="cphMainContent_labEventDate">2024-07-01</span>
-#         <span id="cphMainContent_labDecisionDate">2024-08-01</span>
-#     """
+    with open(path.realpath("./tests/planning_applications/fixtures/appeals/case.html"), "r") as f:
+        html = f.read()
 
-    response = TextResponse(url="https://example.com/ViewCase.aspx?CaseID=12345&CoID=0", body=html, encoding="utf-8")
+    response = TextResponse(
+        url="https://acp.planninginspectorate.gov.uk/ViewCase.aspx?CaseID=3360163&ColID=0", body=html, encoding="utf-8"
+    )
 
-    results = list(AppealsSpider(from_case_id="12345", to_case_id="12346").parse_case(response))
+    results = list(AppealsSpider(from_case_id="3360163", to_case_id="3360163").parse_case(response))
 
     assert len(results) == 1
     item = results[0]
-    assert item["reference"] == "APP/12345"
-    assert item["lpa"] == "Test Council"
-    assert item["appellant_name"] == "John Doe"
-    assert item["start_date"] == date(2024, 1, 1)
-    assert item["questionnaire_due_date"] == date(2024, 2, 1)
-    assert item["statement_due_date"] == date(2024, 3, 1)
-    assert item["decision_date"] == date(2024, 8, 1)
+
+    assert isinstance(item, PlanningApplicationAppeal)
+    assert item.lpa == "North Yorkshire Council"
+    assert item.url == "https://acp.planninginspectorate.gov.uk/ViewCase.aspx?CaseID=3360163&ColID=0"
+    assert item.reference == "APP/U2750/W/25/3360163"
+    assert item.case_id == 3360163
+    assert item.appellant_name == "Mr D Cowton"
+    assert item.agent_name == "ELG Planning"
+    assert item.site_address == "Back Lane\nAlne\nYO61 1TJ"
+    assert item.case_type == "Planning Appeal (W)"
+    assert item.case_officer == "Nicholas Patch"
+    assert item.status == "In Progress"
+    assert item.decision == "Not yet decided"
+    assert item.start_date == datetime(2025, 2, 10, 0, 0)
+    assert item.questionnaire_due_date == datetime(2025, 2, 17, 0, 0)
+    assert item.statement_due_date == datetime(2025, 3, 17, 0, 0)
+    assert item.interested_party_comments_due_date == datetime(2025, 3, 17, 0, 0)
+    assert item.final_comments_due_date == datetime(2025, 3, 31, 0, 0)
+    assert item.inquiry_evidence_due_date is None
+    assert item.event_date is None
+    assert item.decision_date is None
 
 
 def test_parse_case_id_from_anchor():
