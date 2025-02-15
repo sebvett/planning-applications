@@ -1,6 +1,6 @@
 import os
 import re
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from re import I
 
 import parsel
@@ -11,7 +11,7 @@ from scrapy.http.response.text import TextResponse
 
 from planning_applications.items import PlanningApplicationAppeal, PlanningApplicationAppealDocument
 from planning_applications.settings import DEFAULT_DATE_FORMAT
-from planning_applications.utils import multiline_css
+from planning_applications.utils import multiline_css, open_in_browser
 
 DEFAULT_START_DATE = datetime(datetime.now().year, datetime.now().month, 1).date()
 DEFAULT_END_DATE = datetime.now().date()
@@ -84,7 +84,70 @@ class AppealsSpider(scrapy.Spider):
 
         self.logger.info(f"Searching for appeals received between {self.start_date} and {self.end_date}")
 
-        yield scrapy.Request(self.start_url, callback=self.get_case_ids_for_date_range, meta={"dont_redirect": True})
+        if not self.start_date or not self.end_date:
+            raise Exception("start_date and end_date must be provided when from_case_id is not provided")
+
+        date_range = [self.start_date + timedelta(days=i) for i in range((self.end_date - self.start_date).days + 1)]
+
+        for d in date_range:
+            self.logger.debug(f"Yielding request for {d}")
+
+            yield scrapy.Request(
+                self.start_url, callback=self.search_date, dont_filter=True, meta={"dont_redirect": True, "date": d}
+            )
+
+    def search_date(self, response: Response):
+        self.logger.info(f"Searching for appeals received on {response.meta['date']}")
+
+        if not response.meta["date"] or not isinstance(response.meta["date"], date):
+            raise Exception("response.meta['date'] must be a date")
+
+        if not isinstance(response, TextResponse):
+            raise Exception("response must be a TextResponse")
+
+        yield scrapy.FormRequest.from_response(
+            response,
+            formdata={
+                "ctl00$hidIsListed": "No",
+                "ctl00$cphMainContent$txtCaseReference": "",
+                "ctl00$cphMainContent$txtStreet": "",
+                "ctl00$cphMainContent$txtTownCity": "",
+                "ctl00$cphMainContent$txtCounty": "",
+                "ctl00$cphMainContent$txtPostCode": "",
+                "ctl00$cphMainContent$txtSearchLPA": "",
+                "ctl00$cphMainContent$txt_lparefnumber": "",
+                "ctl00$cphMainContent$cboAppealType": "-1",
+                "ctl00$cphMainContent$ppsAppellant$txtPerson": "",
+                "ctl00$cphMainContent$ppsOtherParty$txtPerson": "",
+                "ctl00$cphMainContent$pdsHearing$txtDateSearch": "",
+                "ctl00$cphMainContent$pdsSiteVisit$txtDateSearch": "",
+                "ctl00$cphMainContent$pdsCallIn$txtDateSearch": "",
+                "ctl00$cphMainContent$pdsReceived$txtDateSearch": response.meta["date"].strftime("%d/%m/%Y"),
+                "ctl00$cphMainContent$pdsDecision$txtDateSearch": "",
+                "ctl00$cphMainContent$cboProcedureType": "-1",
+                "ctl00$cphMainContent$cboStatus": "-1",
+                "ctl00$cphMainContent$cmdSearch": "Search",
+                "ctl00$cphMainContent$cboSearchLPA": "-1",
+            },
+            callback=self.parse_search_results,
+            dont_filter=True,
+            meta={"dont_redirect": True, "date": response.meta["date"]},
+        )
+
+    def parse_search_results(self, response: Response):
+        self.logger.info(f"Parsing search results for {response.meta['date']}")
+
+        if not isinstance(response, TextResponse):
+            raise Exception("response must be a TextResponse")
+
+        for case_anchor in response.css("#cphMainContent_grdCaseResults tr td a"):
+            case_id = self._parse_case_id_from_anchor(case_anchor)
+            if case_id:
+                yield scrapy.Request(
+                    url=f"{self.base_url}/ViewCase.aspx?CaseID={case_id}&CoID=0",
+                    callback=self.parse_case,
+                    meta={"dont_redirect": True},
+                )
 
     def issue_requests_for_case_ids(self):
         self.logger.info(f"Issuing requests for case IDs between {self.from_case_id} and {self.to_case_id}")
@@ -200,111 +263,3 @@ class AppealsSpider(scrapy.Spider):
             return None
 
         return int(case_id.group(1))
-
-    def get_case_ids_for_date_range(self, response: Response):
-        """
-        The appeals registry gives us a monotonically increasing case ID, which allows us to loop
-        through cases within our date range nice and quickly.
-
-        But to do that we need to know the lowest and highest case IDs within our date range.
-        """
-        if not isinstance(response, TextResponse):
-            self.logger.error("get_case_ids_for_date_range must be called with a TextResponse")
-            return
-        yield from self._find_highest_case_id(response, self.end_date or datetime.now().date())
-
-    def _find_highest_case_id(self, response: TextResponse, date: date):
-        yield scrapy.FormRequest.from_response(
-            response,
-            formdata={
-                "ctl00$hidIsListed": "No",
-                "ctl00$cphMainContent$txtCaseReference": "",
-                "ctl00$cphMainContent$txtStreet": "",
-                "ctl00$cphMainContent$txtTownCity": "",
-                "ctl00$cphMainContent$txtCounty": "",
-                "ctl00$cphMainContent$txtPostCode": "",
-                "ctl00$cphMainContent$txtSearchLPA": "",
-                "ctl00$cphMainContent$txt_lparefnumber": "",
-                "ctl00$cphMainContent$cboAppealType": "-1",
-                "ctl00$cphMainContent$ppsAppellant$txtPerson": "",
-                "ctl00$cphMainContent$ppsOtherParty$txtPerson": "",
-                "ctl00$cphMainContent$pdsHearing$txtDateSearch": "",
-                "ctl00$cphMainContent$pdsSiteVisit$txtDateSearch": "",
-                "ctl00$cphMainContent$pdsCallIn$txtDateSearch": "",
-                "ctl00$cphMainContent$pdsReceived$txtDateSearch": date.strftime("%d/%m/%Y"),
-                "ctl00$cphMainContent$pdsDecision$txtDateSearch": "",
-                "ctl00$cphMainContent$cboProcedureType": "-1",
-                "ctl00$cphMainContent$cboStatus": "-1",
-                "ctl00$cphMainContent$cmdSearch": "Search",
-                "ctl00$cphMainContent$cboSearchLPA": "-1",
-            },
-            callback=self._parse_highest_case_id_from_search_results,
-            dont_filter=True,
-            meta={"dont_redirect": True, "original_response": response},
-        )
-
-    def _parse_highest_case_id_from_search_results(self, response: TextResponse):
-        self.logger.info("Parsing search results to find highest case ID")
-
-        highest_case_id = EARLIEST_KNOWN_CASE_ID
-        for case_anchor in response.css('a[id^="cphMainContent_grdCaseResults_lnkViewCase_"]').getall():
-            case_id = int(case_anchor.split("CaseID=")[1].split("&")[0])
-            if case_id > highest_case_id:
-                highest_case_id = case_id
-
-        self.logger.info(f"Found highest case ID: {highest_case_id}")
-        self.to_case_id = highest_case_id
-
-        yield from self._find_lowest_case_id(
-            response.meta["original_response"], self.start_date or datetime.now().date()
-        )
-
-    def _find_lowest_case_id(self, response: TextResponse, date: date):
-        yield scrapy.FormRequest.from_response(
-            response,
-            formdata={
-                "ctl00$hidIsListed": "No",
-                "ctl00$cphMainContent$txtCaseReference": "",
-                "ctl00$cphMainContent$txtStreet": "",
-                "ctl00$cphMainContent$txtTownCity": "",
-                "ctl00$cphMainContent$txtCounty": "",
-                "ctl00$cphMainContent$txtPostCode": "",
-                "ctl00$cphMainContent$txtSearchLPA": "",
-                "ctl00$cphMainContent$txt_lparefnumber": "",
-                "ctl00$cphMainContent$cboAppealType": "-1",
-                "ctl00$cphMainContent$ppsAppellant$txtPerson": "",
-                "ctl00$cphMainContent$ppsOtherParty$txtPerson": "",
-                "ctl00$cphMainContent$pdsHearing$txtDateSearch": "",
-                "ctl00$cphMainContent$pdsSiteVisit$txtDateSearch": "",
-                "ctl00$cphMainContent$pdsCallIn$txtDateSearch": "",
-                "ctl00$cphMainContent$pdsReceived$txtDateSearch": date.strftime("%d/%m/%Y"),
-                "ctl00$cphMainContent$pdsDecision$txtDateSearch": "",
-                "ctl00$cphMainContent$cboProcedureType": "-1",
-                "ctl00$cphMainContent$cboStatus": "-1",
-                "ctl00$cphMainContent$cmdSearch": "Search",
-                "ctl00$cphMainContent$cboSearchLPA": "-1",
-            },
-            callback=self._parse_lowest_case_id_from_search_results,
-            dont_filter=True,
-            meta={"dont_redirect": True},
-        )
-
-    def _parse_lowest_case_id_from_search_results(self, response: TextResponse):
-        self.logger.info("Parsing search results to find lowest case ID")
-
-        lowest_case_id = self.to_case_id or EARLIEST_KNOWN_CASE_ID
-        for case_anchor in response.css('a[id^="cphMainContent_grdCaseResults_lnkViewCase_"]').getall():
-            case_id = int(case_anchor.split("CaseID=")[1].split("&")[0])
-            if case_id < lowest_case_id:
-                lowest_case_id = case_id
-
-        if "Your search exceeded 250 results" in response.text:
-            raise ValueError(f"""There are more than 250 cases for the date {self.start_date}.
-                             
-Due to an implementation detail, we don't currently support start_date searches for days which have more than 250 cases.
-Please adjust the start date to be earlier and discard the oldest cases.""")
-
-        self.logger.info(f"Found lowest case ID: {lowest_case_id}")
-        self.from_case_id = lowest_case_id
-
-        yield from self.issue_requests_for_case_ids()
