@@ -153,3 +153,38 @@ class IdoxPlanningApplicationItem(scrapy.Item):
     is_active = scrapy.Field()
     documents = scrapy.Field()
     geometry = scrapy.Field()
+
+
+# ---------------------------------------------------------------------------------------------------------------------
+# Appeals
+
+
+class PlanningApplicationAppeal(pydantic.BaseModel):
+    lpa: str
+    url: str
+    reference: str
+    case_id: int
+    appellant_name: Optional[str] = None
+    agent_name: Optional[str] = None
+    site_address: Optional[str] = None
+    case_type: Optional[str] = None
+    case_officer: Optional[str] = None
+    procedure: Optional[str] = None
+    status: Optional[str] = None
+    decision: Optional[str] = None
+    start_date: Optional[datetime] = None
+    questionnaire_due_date: Optional[datetime] = None
+    statement_due_date: Optional[datetime] = None
+    interested_party_comments_due_date: Optional[datetime] = None
+    final_comments_due_date: Optional[datetime] = None
+    inquiry_evidence_due_date: Optional[datetime] = None
+    event_date: Optional[datetime] = None
+    decision_date: Optional[datetime] = None
+    linked_case_ids: Optional[List[int]] = None
+
+
+class PlanningApplicationAppealDocument(pydantic.BaseModel):
+    appeal_case_id: int
+    reference: str
+    name: str
+    url: str

@@ -1,19 +1,28 @@
+from typing import Any
+
 from planning_applications.db import (
     get_connection,
     get_cursor,
     upsert_planning_application,
+    upsert_planning_application_appeal,
+    upsert_planning_application_appeal_document,
     upsert_planning_application_document,
     upsert_planning_application_geometry,
 )
 from planning_applications.items import (
     IdoxPlanningApplicationGeometry,
     IdoxPlanningApplicationItem,
+    PlanningApplicationAppeal,
+    PlanningApplicationAppealDocument,
     PlanningApplicationItem,
 )
 
 
 class IdoxPlanningApplicationPipeline:
-    def process_item(self, idox_item: IdoxPlanningApplicationItem, spider) -> PlanningApplicationItem:
+    def process_item(self, idox_item: IdoxPlanningApplicationItem | Any, spider) -> PlanningApplicationItem:
+        if not isinstance(idox_item, IdoxPlanningApplicationItem):
+            return idox_item
+
         spider.logger.info("Mapping item")
 
         item = PlanningApplicationItem(
@@ -57,8 +66,38 @@ class PostgresPipeline:
         self.connection = get_connection()
         self.cur = get_cursor(self.connection)
 
-    def process_item(self, item: PlanningApplicationItem, spider):
-        spider.logger.info("Inserting item")
+    def process_item(self, item: PlanningApplicationItem | PlanningApplicationAppeal, spider):
+        if isinstance(item, PlanningApplicationAppealDocument):
+            return self.process_appeal_case_document_item(item, spider)
+
+        if isinstance(item, PlanningApplicationAppeal):
+            return self.process_appeal_case_item(item, spider)
+
+        if isinstance(item, PlanningApplicationItem):
+            return self.process_planning_application_item(item, spider)
+
+    def process_appeal_case_item(self, item: PlanningApplicationAppeal, spider):
+        spider.logger.info(f"Inserting planning application appeal {item.reference}")
+        try:
+            _ = upsert_planning_application_appeal(self.cur, item)
+            self.connection.commit()
+        except Exception as e:
+            self.connection.rollback()
+            spider.logger.error(f"Error inserting appeal case into the database: {e}")
+            raise
+
+    def process_appeal_case_document_item(self, item: PlanningApplicationAppealDocument, spider):
+        spider.logger.info(f"Inserting planning application appeal document {item.reference}")
+        try:
+            _ = upsert_planning_application_appeal_document(self.cur, item)
+            self.connection.commit()
+        except Exception as e:
+            self.connection.rollback()
+            spider.logger.error(f"Error inserting appeal case document into the database: {e}")
+            raise
+
+    def process_planning_application_item(self, item: PlanningApplicationItem, spider):
+        spider.logger.info(f"Inserting planning application {item['reference']}")
 
         try:
             uuid = upsert_planning_application(self.cur, item)

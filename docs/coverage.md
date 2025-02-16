@@ -379,3 +379,4 @@
 | Wyre Forest                                        | Idox       | [Link](https://planningpa.wyreforestdc.gov.uk/online-applications)                                                                     |
 | York                                               | Idox       | [Link](https://planningaccess.york.gov.uk/online-applications)                                                                         |
 | Yorkshire Dales                                    | Agile      | [Link](https://planning.agileapplications.co.uk/yorkshiredales/search-applications)                                                    |
+| Planning Inspectorate (Planning Appeals)           | Custom     | [Link](https://acp.planninginspectorate.gov.uk/)                                                                                       |
