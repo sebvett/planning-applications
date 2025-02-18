@@ -12,6 +12,8 @@ class CarlisleSpider(IdoxSpider):
     start_url: str = f"https://{domain}/online-applications/search.do?action=advanced"
     arcgis_url: str = f"https://{domain}/server/rest/services/PALIVE/LIVEUniformPA_Planning/FeatureServer/2/query"
 
+    not_yet_working: bool = True
+
     def _build_formdata(self, response: Response) -> Dict[str, str | None]:
         csrf = response.css("input[name='_csrf']::attr(value)").get()
         if not csrf:

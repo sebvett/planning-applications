@@ -16,7 +16,7 @@ from planning_applications.settings import DEFAULT_DATE_FORMAT
 logger = logging.getLogger(__name__)
 
 
-def get_spider_names() -> List[str]:
+def get_spider_names(skip_not_working: bool = False) -> List[str]:
     spider_names = []
     spiders_dir = "planning_applications/spiders/lpas"
 
@@ -24,7 +24,15 @@ def get_spider_names() -> List[str]:
     for file in os.listdir(spiders_dir):
         if file.endswith(".py") and file != "__init__.py":
             spider_name = file[:-3]  # Remove .py extension
-            spider_names.append(spider_name)
+        if skip_not_working:
+            module = __import__(f"planning_applications.spiders.lpas.{spider_name}", fromlist=["*"])
+            spider_class = next(
+                (cls for name, cls in module.__dict__.items() if isinstance(cls, type) and name.endswith("Spider")),
+                None,
+            )
+            if spider_class and getattr(spider_class, "not_yet_working", False):
+                continue
+        spider_names.append(spider_name)
 
     return sorted(spider_names)
 
@@ -135,30 +143,29 @@ def run_spiders(
 
 def main():
     parser = argparse.ArgumentParser(description="Run planning application spiders")
-    group = parser.add_mutually_exclusive_group(required=True)
-    group.add_argument(
+    parser.add_argument(
+        "--all",
+        action="store_true",
+        help="Run all working spiders with default dates",
+    )
+    parser.add_argument(
         "--from-earliest",
         action="store_true",
         help="Start from earliest date in database plus one month for all spiders",
     )
-    group.add_argument(
-        "--all",
-        action="store_true",
-        help="Run all spiders with default dates",
-    )
-    group.add_argument(
+    parser.add_argument(
         "--lpa-dates",
         nargs="+",
         help="List of LPA,start_date,end_date (e.g., 'cambridge,2024-01-01,2024-02-01')",
     )
-    group.add_argument(
+    parser.add_argument(
         "--lpas-from-earliest",
         nargs="+",
         help="List of LPA names to run from their earliest dates (e.g., 'cambridge barnet')",
     )
-
     args = parser.parse_args()
-    all_spider_names = get_spider_names()
+
+    all_spider_names = get_spider_names(skip_not_working=args.all)
 
     if args.lpas_from_earliest:
         invalid_lpas = [lpa for lpa in args.lpas_from_earliest if lpa not in all_spider_names]

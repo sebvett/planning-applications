@@ -19,6 +19,7 @@ class BaseSpider(scrapy.Spider):
 
     # How many applications to scrape before stopping
     limit: int = 999_999_999_999
+
     # Which objects should be scraped
     object_types: List[objectType] = [
         objectType.APPLICATION,
@@ -26,6 +27,9 @@ class BaseSpider(scrapy.Spider):
         objectType.GEOMETRY,
         objectType.COMMENT,
     ]
+
+    # Whether the spider is not yet working (will be skipped when running all in production)
+    not_yet_working: bool = False
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

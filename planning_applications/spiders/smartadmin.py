@@ -23,6 +23,8 @@ class SmartAdminSpider(BaseSpider):
     start_date: date = DEFAULT_START_DATE
     end_date: date = DEFAULT_END_DATE
 
+    not_yet_working: bool = True
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
