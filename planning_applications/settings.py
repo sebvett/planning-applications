@@ -54,9 +54,9 @@ COOKIES_ENABLED = True
 
 # Enable or disable spider middlewares
 # See https://docs.scrapy.org/en/latest/topics/spider-middleware.html
-# SPIDER_MIDDLEWARES = {
-#    "planning_applications.middlewares.PlanningApplicationsSpiderMiddleware": 543,
-# }
+SPIDER_MIDDLEWARES = {
+    "shared.middlewares.LogScraperRunMiddleware": 543,
+}
 
 # Enable or disable downloader middlewares
 # See https://docs.scrapy.org/en/latest/topics/downloader-middleware.html

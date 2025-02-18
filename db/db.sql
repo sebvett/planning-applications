@@ -2,6 +2,8 @@ CREATE EXTENSION IF NOT EXISTS "postgis";
 
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
+DROP TABLE IF EXISTS public.scraper_runs CASCADE;
+
 DROP TABLE IF EXISTS public.planning_application_documents CASCADE;
 
 DROP TABLE IF EXISTS public.planning_application_geometries CASCADE;
@@ -11,6 +13,15 @@ DROP TABLE IF EXISTS public.planning_applications CASCADE;
 DROP TABLE IF EXISTS public.planning_application_appeals CASCADE;
 
 DROP TABLE IF EXISTS public.planning_application_appeals_documents CASCADE;
+
+CREATE TABLE
+    public.scraper_runs (
+        name TEXT NOT NULL,
+        last_finished_at TIMESTAMP,
+        last_data_found_at TIMESTAMP,
+        last_run_stats JSONB,
+        CONSTRAINT scraper_runs_name_pkey PRIMARY KEY (name)
+    );
 
 CREATE TABLE
     public.planning_applications (

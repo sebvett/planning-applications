@@ -1,4 +1,4 @@
-from datetime import date, datetime
+from datetime import date
 from typing import Optional
 
 import psycopg
@@ -12,19 +12,8 @@ from planning_applications.items import (
     PlanningApplicationItem,
 )
 from planning_applications.settings import DEFAULT_DATE_FORMAT
-from planning_applications.utils import getenv, to_datetime_or_none
-
-database_url = getenv("DATABASE_URL")
-print(f"DATABASE_URL: {database_url}")
-
-
-def get_connection():
-    return psycopg.connect(database_url)
-
-
-def get_cursor(connection):
-    return connection.cursor()
-
+from planning_applications.utils import to_datetime_or_none
+from shared.db import get_connection, get_cursor
 
 # Selects
 # -------------------------------------------------------------------------------------------------
