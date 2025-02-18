@@ -258,7 +258,7 @@
 | Redbridge                                          | Agile      | [Link](https://planning.redbridge.gov.uk/redbridge/search-applications)                                                                |
 | Redcar and Cleveland                               | Custom     | [Link](https://planning.redcar-cleveland.gov.uk/Search/Planning/Advanced)                                                              |
 | Redditch                                           | Idox       | [Link](https://publicaccess.bromsgroveandredditch.gov.uk/online-applications)                                                          |
-| Reigate                                            | Idox       | [Link](https://planning.reigate-banstead.gov.uk/online-applications)                                                                   |
+| Reigate and Banstead                               | Idox       | [Link](https://planning.reigate-banstead.gov.uk/online-applications)                                                                   |
 | Renfrewshire                                       | Idox       | [Link](https://pl-bs.renfrewshire.gov.uk/online-applications)                                                                          |
 | Rhondda                                            | Idox       | [Link](https://plan.rctcbc.gov.uk/online-applications)                                                                                 |
 | Ribble Valley                                      | Custom     | [Link](https://webportal.ribblevalley.gov.uk/planningApplication/search/advanced)                                                      |
