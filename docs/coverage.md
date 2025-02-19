@@ -308,7 +308,6 @@
 | Spelthorne                                         | Idox       | [Link](https://publicaccess.spelthorne.gov.uk/online-applications)                                                                     |
 | St Albans                                          | Custom     | [Link](https://planningapplications.stalbans.gov.uk/planning/search-applications?s=c4c143aa604d31e7a059fcb60a1537842a5749a8)           |
 | Stafford                                           | Idox       | [Link](https://www12.staffordbc.gov.uk/online-applications)                                                                            |
-| Staffordshire                                      | Idox       | [Link](https://www12.staffordbc.gov.uk/online-applications)                                                                            |
 | Staffordshire Moorlands                            | Custom     | [Link](http://publicaccess.staffsmoorlands.gov.uk/portal/servlets/ApplicationSearchServlet)                                            |
 | Stevenage                                          | Idox       | [Link](https://publicaccess.stevenage.gov.uk/online-applications)                                                                      |
 | Stirling                                           | Idox       | [Link](https://pabs.stirling.gov.uk/online-applications)                                                                               |
