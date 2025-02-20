@@ -3,8 +3,8 @@ from typing import List
 from planning_applications.spiders.idox import IdoxSpider
 
 
-class WestBerksSpider(IdoxSpider):
-    name: str = "westberks"
+class WestBerkshireSpider(IdoxSpider):
+    name: str = "west_berkshire"
     domain: str = "publicaccess.westberks.gov.uk"
     allowed_domains: List[str] = [domain]
     start_url: str = f"https://{domain}/online-applications"

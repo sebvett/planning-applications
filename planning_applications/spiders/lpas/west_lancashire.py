@@ -4,7 +4,7 @@ from planning_applications.spiders.idox import IdoxSpider
 
 
 class WestLancashireSpider(IdoxSpider):
-    name: str = "westlancashire"
+    name: str = "west_lancashire"
     domain: str = "pa.westlancs.gov.uk"
     allowed_domains: List[str] = [domain]
     start_url: str = f"https://{domain}/online-applications"

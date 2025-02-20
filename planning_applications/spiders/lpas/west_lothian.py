@@ -4,7 +4,7 @@ from planning_applications.spiders.idox import IdoxSpider
 
 
 class WestLothianSpider(IdoxSpider):
-    name: str = "westlothian"
+    name: str = "west_lothian"
     domain: str = "planning.westlothian.gov.uk"
     allowed_domains: List[str] = [domain]
     start_url: str = f"https://{domain}/publicaccess"

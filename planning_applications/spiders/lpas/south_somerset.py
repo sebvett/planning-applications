@@ -4,7 +4,7 @@ from planning_applications.spiders.idox import IdoxSpider
 
 
 class SouthSomersetSpider(IdoxSpider):
-    name: str = "southsomerset"
+    name: str = "south_somerset"
     domain: str = "publicaccess.southsomerset.gov.uk"
     allowed_domains: List[str] = [domain]
     start_url: str = f"https://{domain}/online-applications"
