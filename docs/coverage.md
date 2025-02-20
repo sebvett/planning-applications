@@ -348,7 +348,6 @@
 | Wandsworth                                         | Northgate  | [Link](https://planning.wandsworth.gov.uk/Northgate/PlanningExplorer/GeneralSearch.aspx)                                               |
 | Warrington                                         | SmartAdmin | [Link](https://online.warrington.gov.uk/planning/index.html?fa=search)                                                                 |
 | Warwick                                            | Idox       | [Link](https://planningdocuments.warwickdc.gov.uk/online-applications)                                                                 |
-| Warwickshire                                       | Idox       | [Link](https://planningdocuments.warwickdc.gov.uk/online-applications)                                                                 |
 | Watford                                            | Idox       | [Link](https://pa.watford.gov.uk/publicaccess)                                                                                         |
 | Wealden                                            | Custom     | [Link](https://planning.wealden.gov.uk)                                                                                                |
 | Welwyn Hatfield                                    | Custom     | [Link](https://planning.welhat.gov.uk/Search/Advanced)                                                                                 |
