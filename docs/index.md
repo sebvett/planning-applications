@@ -61,6 +61,22 @@ To do this, set `POSTGRES_HOST=localhost` in the .env file.
 
 Then run `uv run scrapy crawl <LPA_NAME>` to run the scraper.
 
+## Saving Files to S3
+
+By default, the scraper will not scrape files and save them to S3.
+
+You can enable this by setting the following environment variables:
+
+- `DOWNLOAD_FILES=true`
+
+You'll also need to configure an AWS profile for the scraper to use. You can do this by setting the `AWS_PROFILE` environment variable:
+
+- `AWS_PROFILE=tract-staging`
+
+And allowing the `boto3` library to access your AWS credentials.
+
+Alternatively, you can set the `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` and `AWS_REGION` environment variables, and the scraper will use these credentials directly.
+
 ## Documentation
 
 We are using [mkdocs](https://www.mkdocs.org/) to build the documentation site.
