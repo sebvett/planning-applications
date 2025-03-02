@@ -188,3 +188,4 @@ class PlanningApplicationAppealDocument(pydantic.BaseModel):
     reference: str
     name: str
     url: str
+    s3_path: Optional[str] = None

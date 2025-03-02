@@ -389,14 +389,16 @@ def upsert_planning_application_appeal_document(
             appeal_case_id,
             reference,
             name,
-            url
+            url,
+            s3_path
         )
         VALUES (
             (SELECT uuid FROM planning_application_appeals WHERE case_id = %(appeal_case_id)s),
             %(appeal_case_id)s,
             %(reference)s,
             %(name)s,
-            %(url)s
+            %(url)s,
+            %(s3_path)s
         )
         ON CONFLICT (url) DO UPDATE SET
             name = EXCLUDED.name,
@@ -408,6 +410,7 @@ def upsert_planning_application_appeal_document(
             "reference": item.reference,
             "name": item.name,
             "url": item.url,
+            "s3_path": item.s3_path,
         },
     )
 

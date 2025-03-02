@@ -61,7 +61,6 @@ SPIDER_MIDDLEWARES = {
 # Enable or disable downloader middlewares
 # See https://docs.scrapy.org/en/latest/topics/downloader-middleware.html
 DOWNLOADER_MIDDLEWARES = {
-    #    "planning_applications.middlewares.PlanningApplicationsDownloaderMiddleware": 543,
     "scrapeops_scrapy.middleware.retry.RetryMiddleware": 550,
     "scrapy.downloadermiddlewares.retry.RetryMiddleware": None,
 }
@@ -77,7 +76,8 @@ EXTENSIONS = {
 # See https://docs.scrapy.org/en/latest/topics/item-pipeline.html
 ITEM_PIPELINES = {
     "planning_applications.pipelines.IdoxPlanningApplicationPipeline": 200,
-    "planning_applications.pipelines.PostgresPipeline": 300,
+    "planning_applications.pipelines.S3FileDownloadPipeline": 300,
+    "planning_applications.pipelines.PostgresPipeline": 400,
 }
 
 # Enable and configure the AutoThrottle extension (disabled by default)

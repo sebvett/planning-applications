@@ -10,6 +10,10 @@ from dotenv import load_dotenv
 load_dotenv()
 
 
+def hasenv(name: str) -> bool:
+    return os.getenv(name) is not None
+
+
 def getenv(name: str) -> str:
     value = os.getenv(name)
     if not value:

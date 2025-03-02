@@ -1,4 +1,11 @@
+import os
+import tempfile
 from typing import Any
+from urllib.parse import urlparse
+
+import boto3
+import requests
+from botocore.exceptions import ClientError
 
 from planning_applications.db import (
     get_connection,
@@ -16,6 +23,7 @@ from planning_applications.items import (
     PlanningApplicationAppealDocument,
     PlanningApplicationItem,
 )
+from planning_applications.utils import getenv, hasenv
 
 
 class IdoxPlanningApplicationPipeline:
@@ -120,3 +128,128 @@ class PostgresPipeline:
     def close_spider(self, spider):
         self.cur.close()
         self.connection.close()
+
+
+class S3FileDownloadPipeline:
+    download_files: bool = False
+    s3_bucket: str
+    s3_client: Any
+
+    def __init__(self):
+        self.download_files = getenv("DOWNLOAD_FILES").lower() == "true"
+        if not self.download_files:
+            return
+
+        self.s3_bucket = getenv("S3_BUCKET_NAME")
+
+        if hasenv("AWS_ACCESS_KEY_ID") and hasenv("AWS_SECRET_ACCESS_KEY") and hasenv("AWS_REGION"):
+            self.s3_client = boto3.client(
+                "s3",
+                aws_access_key_id=getenv("AWS_ACCESS_KEY_ID"),
+                aws_secret_access_key=getenv("AWS_SECRET_ACCESS_KEY"),
+                region_name=getenv("AWS_REGION"),
+            )
+            return
+
+        try:
+            self.s3_client = boto3.client("s3")
+            self.s3_client.head_bucket(Bucket=self.s3_bucket)
+        except Exception as e:
+            raise Exception("AWS credentials not found") from e
+
+    def process_item(self, item, spider):
+        if not self.download_files:
+            return item
+
+        if isinstance(item, PlanningApplicationAppealDocument):
+            self._download_and_upload_appeal_document(item, spider)
+
+        return item
+
+    def _download_and_upload_appeal_document(self, document, spider):
+        url = self._get_attribute_or_key(document, "url")
+        if not url:
+            return
+
+        appeal_case_id = self._get_attribute_or_key(document, "appeal_case_id")
+        reference = self._get_attribute_or_key(document, "reference")
+        filename = self._get_attribute_or_key(document, "name")
+
+        s3_key = f"appeals/{appeal_case_id}/{reference}/{filename}"
+        if self._object_exists(s3_key):
+            spider.logger.info(f"Appeal document already exists in S3: {s3_key}")
+            return
+
+        spider.logger.info(f"Downloading appeal document: {url}")
+
+        with tempfile.NamedTemporaryFile(delete=False) as temp_file:
+            try:
+                response = requests.get(url, stream=True, timeout=30)
+                response.raise_for_status()
+
+                for chunk in response.iter_content(chunk_size=8192):
+                    temp_file.write(chunk)
+
+                temp_file.flush()
+
+                self._upload_file_to_s3(temp_file.name, s3_key, spider)
+
+                spider.logger.info(f"Successfully uploaded appeal document {s3_key} to S3")
+
+                document.s3_path = f"s3://{self.s3_bucket}/{s3_key}"
+
+            except requests.RequestException as e:
+                spider.logger.error(f"Error downloading appeal document {url}: {e}")
+            finally:
+                os.unlink(temp_file.name)
+
+    def _upload_file_to_s3(self, file_path, s3_key, spider):
+        try:
+            content_type = self._get_content_type(s3_key)
+
+            self.s3_client.upload_file(file_path, self.s3_bucket, s3_key, ExtraArgs={"ContentType": content_type})
+        except ClientError as e:
+            spider.logger.error(f"S3 upload error for {s3_key}: {e}")
+            raise
+
+    def _get_content_type(self, filename):
+        ext = os.path.splitext(filename)[1].lower()
+
+        content_types = {
+            ".pdf": "application/pdf",
+            ".doc": "application/msword",
+            ".docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            ".xls": "application/vnd.ms-excel",
+            ".xlsx": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            ".jpg": "image/jpeg",
+            ".jpeg": "image/jpeg",
+            ".png": "image/png",
+            ".tif": "image/tiff",
+            ".tiff": "image/tiff",
+            ".txt": "text/plain",
+            ".html": "text/html",
+        }
+
+        return content_types.get(ext, "application/octet-stream")
+
+    def _object_exists(self, s3_key):
+        try:
+            self.s3_client.head_object(Bucket=self.s3_bucket, Key=s3_key)
+            return True
+        except ClientError as e:
+            # Object does not exist
+            if e.response["Error"]["Code"] == "404":
+                return False
+            # Some other error
+            raise
+
+    def _get_attribute_or_key(self, obj, name, default=None):
+        if isinstance(obj, dict):
+            return obj.get(name, default)
+        return getattr(obj, name, default)
+
+    def _set_attribute_or_key(self, obj, name, value):
+        if isinstance(obj, dict):
+            obj[name] = value
+        else:
+            setattr(obj, name, value)

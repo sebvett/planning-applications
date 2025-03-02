@@ -128,10 +128,10 @@ CREATE TABLE
         reference text,
         name text,
         url TEXT NOT NULL,
+        s3_path TEXT,
         first_imported_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
         last_imported_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
         CONSTRAINT planning_application_appeals_documents_pkey PRIMARY KEY (uuid),
-        CONSTRAINT planning_application_appeals_documents_planning_application_appeal_uuid_key UNIQUE (planning_application_appeal_uuid),
         CONSTRAINT planning_application_appeals_documents_url_key UNIQUE (url),
         FOREIGN KEY (planning_application_appeal_uuid) REFERENCES public.planning_application_appeals (uuid)
     );

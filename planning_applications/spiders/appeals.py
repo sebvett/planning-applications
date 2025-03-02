@@ -56,10 +56,10 @@ class AppealsSpider(scrapy.Spider):
             return
 
         if isinstance(self.start_date, str):
-            self.start_date = datetime.strptime(self.start_date, DEFAULT_DATE_FORMAT).date()
+            self.start_date = datetime.strptime(self.start_date, str(DEFAULT_DATE_FORMAT)).date()
 
         if isinstance(self.end_date, str):
-            self.end_date = datetime.strptime(self.end_date, DEFAULT_DATE_FORMAT).date()
+            self.end_date = datetime.strptime(self.end_date, str(DEFAULT_DATE_FORMAT)).date()
 
         if not self.start_date or not self.end_date:
             raise ValueError("start_date and end_date must be provided when from_case_id is not provided")
@@ -232,26 +232,34 @@ class AppealsSpider(scrapy.Spider):
 
         # Does this case have any documents?
         documents_container = response.css("#cphMainContent_labDecisionLink")
-        if documents_container:
-            self.logger.info(f"Found documents for case ID {case_id}")
+        if not documents_container:
+            self.logger.info(f"No documents found for case ID {case_id}")
+            return
 
-            for documents_anchor in documents_container.css("a"):
-                if documents_anchor:
-                    document_path = documents_anchor.css("::attr(href)").get()
-                    if not document_path:
-                        self.logger.error(f"No document path found for case ID {case_id}. This should never happen.")
-                        continue
+        documents_anchors = documents_container.css("a")
+        if not documents_anchors or len(documents_anchors) == 0:
+            self.logger.info(f"No documents found for case ID {case_id}")
+            return
 
-                    document_url = f"{self.base_url}/{document_path}"
-                    document_id = document_path.split("fileid=")[1].split("&")[0]
-                    document_name = documents_anchor.css("::text").get()
+        for documents_anchor in documents_anchors:
+            if not documents_anchor:
+                continue
 
-                    yield PlanningApplicationAppealDocument(
-                        appeal_case_id=case_id,
-                        reference=document_id,
-                        name=document_name or document_url,
-                        url=document_url,
-                    )
+            document_path = documents_anchor.css("::attr(href)").get()
+            if not document_path:
+                self.logger.error(f"No document path found for case ID {case_id}. This should never happen.")
+                continue
+
+            document_url = f"{self.base_url}/{document_path}"
+            document_id = document_path.split("fileid=")[1].split("&")[0]
+            document_name = documents_anchor.css("::text").get()
+
+            yield PlanningApplicationAppealDocument(
+                appeal_case_id=case_id,
+                reference=document_id,
+                name=document_name or document_url,
+                url=document_url,
+            )
 
     def _parse_case_id_from_anchor(self, case_anchor: parsel.selector.Selector):
         case_url = case_anchor.css("::attr(href)").get()
