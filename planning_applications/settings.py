@@ -9,7 +9,7 @@
 
 import scrapy_colorlog
 
-from planning_applications.utils import getenv
+from planning_applications.utils import getenv, hasenv
 
 SCRAPEOPS_API_KEY = getenv("SCRAPEOPS_API_KEY")
 ZYTE_API_KEY = getenv("ZYTE_API_KEY")
@@ -23,7 +23,7 @@ NEWSPIDER_MODULE = "planning_applications.spiders"
 
 
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
-# USER_AGENT = "planning_applications (+http://www.yourdomain.com)"
+USER_AGENT = getenv("USER_AGENT") if hasenv("USER_AGENT") else "planning_applications"
 
 # Obey robots.txt rules
 ROBOTSTXT_OBEY = False
