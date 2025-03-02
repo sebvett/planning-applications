@@ -135,12 +135,24 @@ class S3FileDownloadPipeline:
     s3_bucket: str
     s3_client: Any
 
-    def __init__(self):
-        self.download_files = getenv("DOWNLOAD_FILES").lower() == "true" if hasenv("DOWNLOAD_FILES") else False
+    @classmethod
+    def from_crawler(cls, crawler):
+        download_files = crawler.settings.getbool("DOWNLOAD_FILES")
+        s3_bucket = crawler.settings.get("PLANNING_APPLICATIONS_BUCKET_NAME")
+        return cls(
+            download_files=download_files,
+            s3_bucket=s3_bucket,
+        )
+
+    def __init__(self, download_files: bool = False, s3_bucket: str | None = None):
+        self.download_files = download_files
         if not self.download_files:
             return
 
-        self.s3_bucket = getenv("PLANNING_APPLICATIONS_BUCKET_NAME")
+        if not s3_bucket:
+            raise ValueError("If DOWNLOAD_FILES is true, PLANNING_APPLICATIONS_BUCKET_NAME must be set")
+
+        self.s3_bucket = s3_bucket
 
         if hasenv("AWS_ACCESS_KEY_ID") and hasenv("AWS_SECRET_ACCESS_KEY") and hasenv("AWS_REGION"):
             self.s3_client = boto3.client(

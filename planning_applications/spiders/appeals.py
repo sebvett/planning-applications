@@ -16,7 +16,7 @@ from planning_applications.utils import multiline_css, open_in_browser
 DEFAULT_START_DATE = datetime(datetime.now().year, datetime.now().month, 1).date()
 DEFAULT_END_DATE = datetime.now().date()
 
-EARLIEST_KNOWN_CASE_ID = int(os.getenv("APPEALS_SPIDER_EARLIEST_KNOWN_CASE_ID", 2005083))
+EARLIEST_KNOWN_CASE_ID = 2005083
 
 
 class AppealsSpider(scrapy.Spider):

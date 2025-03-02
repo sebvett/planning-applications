@@ -134,9 +134,11 @@ def run_spiders(
 def run_appeals(
     from_date: date,
     to_date: date,
+    metadata_only: bool = False,
 ) -> None:
     """Run the planning appeals spider with the given dates."""
     settings = get_project_settings()
+    settings["DOWNLOAD_FILES"] = not metadata_only
     process = CrawlerProcess(settings)
     process.crawl("appeals", start_date=from_date, end_date=to_date)
     process.start()
@@ -161,6 +163,11 @@ def main():
         type=date.fromisoformat,
         required=True,
         help="End date, inclusive (YYYY-MM-DD)",
+    )
+    appeals_parser.add_argument(
+        "--metadata-only",
+        action="store_true",
+        help="Do not download files to S3, just scrape the metadata",
     )
 
     lpas_parser = subparsers.add_parser(
@@ -193,7 +200,9 @@ def main():
     args = parser.parse_args()
 
     if args.command == "appeals":
-        run_appeals(args.from_date, args.to_date)
+        appeals_args = vars(args)
+        del appeals_args["command"]
+        run_appeals(**appeals_args)
         return
 
     if args.command == "lpas":

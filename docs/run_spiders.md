@@ -34,6 +34,10 @@ uv run run_spiders.py appeals --from-date YYYY-MM-DD --to-date YYYY-MM-DD
 - `--from-date`: Start date for appeals data collection (inclusive, format YYYY-MM-DD)
 - `--to-date`: End date for appeals data collection (inclusive, format YYYY-MM-DD)
 
+#### Optionals
+
+- `--metadata-only`: Do not download files to S3, just scrape the metadata
+
 ## Examples
 
 ### Run all working LPAs
