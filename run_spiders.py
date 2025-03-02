@@ -131,44 +131,88 @@ def run_spiders(
     process.start()
 
 
+def run_appeals(
+    from_date: date,
+    to_date: date,
+) -> None:
+    """Run the planning appeals spider with the given dates."""
+    settings = get_project_settings()
+    process = CrawlerProcess(settings)
+    process.crawl("appeals", start_date=from_date, end_date=to_date)
+    process.start()
+
+
 def main():
     parser = argparse.ArgumentParser(description="Run planning application spiders")
-    group = parser.add_mutually_exclusive_group()
+    subparsers = parser.add_subparsers(help="sub-command help", dest="command")
+
+    appeals_parser = subparsers.add_parser(
+        "appeals",
+        description="Planning appeals spider",
+    )
+    appeals_parser.add_argument(
+        "--from-date",
+        type=date.fromisoformat,
+        required=True,
+        help="Start date, inclusive (YYYY-MM-DD)",
+    )
+    appeals_parser.add_argument(
+        "--to-date",
+        type=date.fromisoformat,
+        required=True,
+        help="End date, inclusive (YYYY-MM-DD)",
+    )
+
+    lpas_parser = subparsers.add_parser(
+        "lpas",
+        description="Planning applications for local authorities",
+    )
+
+    group = lpas_parser.add_mutually_exclusive_group()
     group.add_argument(
         "--all",
         action="store_true",
         help="Run all working spiders with default dates",
     )
-    parser.add_argument(
+
+    lpas_parser.add_argument(
         "--from-earliest",
         action="store_true",
         help="Start from earliest date in database plus one month for all spiders",
     )
-    parser.add_argument(
+    lpas_parser.add_argument(
         "--lpa-dates",
         nargs="+",
         help="List of LPA,start_date,end_date (e.g., 'cambridge,2024-01-01,2024-02-01')",
     )
-    parser.add_argument(
+    lpas_parser.add_argument(
         "--lpas-from-earliest",
         nargs="+",
         help="List of LPA names to run from their earliest dates (e.g., 'cambridge barnet')",
     )
     args = parser.parse_args()
 
-    all_spider_names = get_spider_names(skip_not_working=args.all)
+    if args.command == "appeals":
+        run_appeals(args.from_date, args.to_date)
+        return
 
-    if args.lpas_from_earliest:
-        invalid_lpas = [lpa for lpa in args.lpas_from_earliest if lpa not in all_spider_names]
-        if invalid_lpas:
-            print(f"[red]Error: Invalid LPA names: {', '.join(invalid_lpas)}[/red]")
-            return
-        run_spiders(args.lpas_from_earliest, from_earliest=True)
-    elif args.lpa_dates:
-        lpa_dates = parse_lpa_dates(args.lpa_dates)
-        run_spiders(all_spider_names, lpa_dates=lpa_dates)
-    else:
-        run_spiders(all_spider_names, from_earliest=args.from_earliest)
+    if args.command == "lpas":
+        all_spider_names = get_spider_names(skip_not_working=args.all)
+
+        if args.lpas_from_earliest:
+            invalid_lpas = [lpa for lpa in args.lpas_from_earliest if lpa not in all_spider_names]
+            if invalid_lpas:
+                print(f"[red]Error: Invalid LPA names: {', '.join(invalid_lpas)}[/red]")
+                return
+            run_spiders(args.lpas_from_earliest, from_earliest=True)
+        elif args.lpa_dates:
+            lpa_dates = parse_lpa_dates(args.lpa_dates)
+            run_spiders(all_spider_names, lpa_dates=lpa_dates)
+        else:
+            run_spiders(all_spider_names, from_earliest=args.from_earliest)
+        return
+
+    raise ValueError(f"Invalid command {args.command}")
 
 
 if __name__ == "__main__":
