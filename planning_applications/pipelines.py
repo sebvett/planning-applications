@@ -136,11 +136,11 @@ class S3FileDownloadPipeline:
     s3_client: Any
 
     def __init__(self):
-        self.download_files = getenv("DOWNLOAD_FILES").lower() == "true"
+        self.download_files = getenv("DOWNLOAD_FILES").lower() == "true" if hasenv("DOWNLOAD_FILES") else False
         if not self.download_files:
             return
 
-        self.s3_bucket = getenv("S3_BUCKET_NAME")
+        self.s3_bucket = getenv("PLANNING_APPLICATIONS_BUCKET_NAME")
 
         if hasenv("AWS_ACCESS_KEY_ID") and hasenv("AWS_SECRET_ACCESS_KEY") and hasenv("AWS_REGION"):
             self.s3_client = boto3.client(
