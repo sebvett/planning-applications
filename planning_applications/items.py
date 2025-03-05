@@ -27,12 +27,17 @@ class PlanningApplication(pydantic.BaseModel):
     expected_decision_level: Optional[str] = None
     actual_decision_level: Optional[str] = None
     case_officer: Optional[str] = None
+    case_officer_phone: Optional[str] = None
     parish: Optional[str] = None
     ward: Optional[str] = None
     amenity_society: Optional[str] = None
+    comments_due_date: Optional[datetime] = None
+    committee_date: Optional[datetime] = None
     district_reference: Optional[str] = None
     applicant_name: Optional[str] = None
     applicant_address: Optional[str] = None
+    agent_name: Optional[str] = None
+    agent_address: Optional[str] = None
     environmental_assessment_requested: Optional[bool] = None
     is_active: bool
 
