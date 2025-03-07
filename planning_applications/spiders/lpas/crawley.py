@@ -191,9 +191,9 @@ class CrawleySpider(BaseSpider):
         document_type = None
 
         for doc_row in response.css(".document-list table tr"):
-            # if has attr .header, the th text value is the document type
             if "header" in doc_row.attrib.get("class", ""):
-                document_type = doc_row.css("th::text").get()
+                texts = [t.strip() for t in doc_row.css("th::text").getall() if t.strip()]
+                document_type = texts[0] if texts else ""
                 continue
 
             doc_link = doc_row.css("a::attr(href)").get()
