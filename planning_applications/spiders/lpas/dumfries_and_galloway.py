@@ -7,5 +7,5 @@ class DumfriesAndGallowaySpider(IdoxSpider):
     name: str = "dumfries_and_galloway"
     domain: str = "eaccess.dumgal.gov.uk"
     allowed_domains: List[str] = [domain]
-    start_url: str = f"https://{domain}/online-applications"
+    start_url: str = f"https://{domain}/online-applications/search.do?action=advanced"
     arcgis_url: str = f"https://{domain}/server/rest/services/PALIVE/LIVEUniformPA_Planning/FeatureServer/2/query"
