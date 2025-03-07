@@ -54,6 +54,13 @@ class PlanningApplicationDocument(pydantic.BaseModel):
     drawing_number: Optional[str] = None
 
 
+class PlanningApplicationGeometry(pydantic.BaseModel):
+    lpa: str
+    application_reference: str
+    reference: str
+    geometry: str = pydantic.Field(repr=False)
+
+
 @deprecated("Use PlanningApplication instead")
 class PlanningApplicationItem(scrapy.Item):
     lpa = scrapy.Field()

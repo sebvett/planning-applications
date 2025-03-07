@@ -25,6 +25,7 @@ from planning_applications.items import (
     PlanningApplicationAppeal,
     PlanningApplicationAppealDocument,
     PlanningApplicationDocument,
+    PlanningApplicationGeometry,
     PlanningApplicationItem,
 )
 from planning_applications.utils import getenv, hasenv
@@ -84,6 +85,7 @@ class PostgresPipeline:
         | PlanningApplicationDocument
         | PlanningApplicationAppeal
         | PlanningApplicationAppealDocument
+        | PlanningApplicationGeometry
         | PlanningApplicationItem,
         spider,
     ):
@@ -98,6 +100,9 @@ class PostgresPipeline:
 
         if isinstance(item, PlanningApplicationAppeal):
             return self.process_appeal_case_item(item, spider)
+
+        if isinstance(item, PlanningApplicationGeometry):
+            return self.process_planning_application_geometry(item, spider)
 
         if isinstance(item, PlanningApplicationItem):
             return self.process_planning_application_item(item, spider)
@@ -170,6 +175,23 @@ class PostgresPipeline:
             raise
 
         return item
+
+    def process_planning_application_geometry(self, item: PlanningApplicationGeometry, spider):
+        spider.logger.info(f"Inserting planning application geometry {item.reference}")
+        try:
+            application_uuid = get_planning_application_uuid_for_lpa_and_reference(
+                self.cur, item.lpa, item.application_reference
+            )
+            if not application_uuid:
+                spider.logger.error(
+                    f"Planning application not found for {item.application_reference}, unable to save geometry"
+                )
+                return item
+
+            _ = upsert_planning_application_geometry(self.cur, application_uuid, item)
+            self.connection.commit()
+        except Exception:
+            self.connection.rollback()
 
     def close_spider(self, spider):
         self.cur.close()

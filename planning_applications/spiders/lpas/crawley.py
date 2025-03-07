@@ -1,9 +1,13 @@
+import json
+import urllib.parse
 from datetime import date, datetime
-from typing import Any, Callable, List
+from typing import Any, Callable, Generator, List
 
 import scrapy
+from scrapy.http.response import Response
+from scrapy.http.response.text import TextResponse
 
-from planning_applications.items import PlanningApplication, PlanningApplicationDocument
+from planning_applications.items import PlanningApplication, PlanningApplicationDocument, PlanningApplicationGeometry
 from planning_applications.settings import DEFAULT_DATE_FORMAT
 from planning_applications.spiders.base import BaseSpider
 
@@ -13,6 +17,7 @@ class CrawleySpider(BaseSpider):
     domain: str = "planningregister.crawley.gov.uk"
     allowed_domains: List[str] = [domain]
     start_url: str = f"https://{domain}/Search/Advanced"
+    arcgis_url: str = "https://services.arcgis.com/Q6r8RL0atbtmukFR/arcgis/rest/services/Planning_Applications_AGOL/FeatureServer/0/query"
 
     not_yet_working: bool = False
 
@@ -39,7 +44,7 @@ class CrawleySpider(BaseSpider):
             dont_filter=True,
         )
 
-    def has_disclaimer_form(self, response) -> bool:
+    def has_disclaimer_form(self, response: Response) -> bool:
         """Check if the response contains the disclaimer form."""
         return bool(response.xpath('//form[.//button[@id="agreeToDisclaimer"]]').get())
 
@@ -62,7 +67,7 @@ class CrawleySpider(BaseSpider):
 
         return wrapped_callback
 
-    def prepare_search_form(self, response):
+    def prepare_search_form(self, response: TextResponse):
         self.logger.info("Disclaimer accepted, now on main planning page")
 
         from_date = self.start_date.strftime("%d/%m/%Y")
@@ -82,7 +87,7 @@ class CrawleySpider(BaseSpider):
             dont_filter=True,
         )
 
-    def parse_search_results(self, response):
+    def parse_search_results(self, response: TextResponse):
         self.logger.info(f"Search results page loaded: {response.url}")
 
         if "No results found" in response.text:
@@ -116,7 +121,7 @@ class CrawleySpider(BaseSpider):
                 dont_filter=True,
             )
 
-    def parse_application_details(self, response):
+    def parse_application_details(self, response: TextResponse):
         self.logger.info("Application details page loaded")
 
         # application
@@ -126,7 +131,9 @@ class CrawleySpider(BaseSpider):
             label = row.xpath('./ancestor::div[contains(@class, "form-group")]/label/text()').get()
             if label:
                 label = label.strip()
-                value = row.css("span::text").get().strip() if row.css("span::text").get() else None
+                value = row.css("span::text").get()
+                if value:
+                    value = value.strip()
                 details[label] = value
 
         # application
@@ -139,10 +146,10 @@ class CrawleySpider(BaseSpider):
         case_officer_phone = details.get("Phone")
         address = details.get("Location")
         proposal = details.get("Proposal")
-        submitted_date = self.parse_date(details.get("Registered Date"))
-        comments_due_date = self.parse_date(details.get("Comments Due Date"))
-        target_decision_date = self.parse_date(details.get("Target Decision Date"))
-        committee_date = self.parse_date(details.get("Committee Date"))
+        submitted_date = self._parse_date(details.get("Registered Date"))
+        comments_due_date = self._parse_date(details.get("Comments Due Date"))
+        target_decision_date = self._parse_date(details.get("Target Decision Date"))
+        committee_date = self._parse_date(details.get("Committee Date"))
         decision = details.get("Decision")
         applicant_name = details.get("Applicant")
         applicant_address = details.get("Applicant's Address")
@@ -214,7 +221,51 @@ class CrawleySpider(BaseSpider):
                 description=doc_description,
             )
 
-    def parse_date(self, date_str: str | None) -> datetime | None:
+        # geometry
+
+        arcgis_url = (
+            self.arcgis_url
+            + "?f=geojson&returnGeometry=true&outFields=*&outSR=4326&where=APP_NO%3D%27"
+            + urllib.parse.quote(application_number)
+            + "%27"
+        )
+
+        yield scrapy.Request(
+            url=arcgis_url,
+            callback=self.parse_arcgis,
+            errback=self.handle_error,
+            dont_filter=True,
+            meta={"application_reference": application_number},
+        )
+
+    def parse_arcgis(self, response: Response) -> Generator[PlanningApplicationGeometry, None, None]:
+        self.logger.info(f"Parsing ArcGIS for application at {response.url}")
+
+        parsed_response = json.loads(response.text)
+        if not parsed_response.get("features"):
+            self.logger.error(f"No features found in response from {response.url}")
+            return
+
+        feature = parsed_response["features"][0]
+        if not feature.get("geometry"):
+            self.logger.error(f"No geometry found in response from {response.url}")
+        elif not feature.get("properties"):
+            self.logger.error(f"No properties found in response from {response.url}")
+        elif not feature["properties"].get("APP_NO"):
+            self.logger.error(f"No APP_NO found in response from {response.url}")
+        elif feature["properties"]["APP_NO"] != response.meta["application_reference"]:
+            self.logger.error(f"APP_NO mismatch in response from {response.url}")
+        else:
+            geometry = json.dumps(feature["geometry"])
+
+        yield PlanningApplicationGeometry(
+            lpa=self.name,
+            application_reference=response.meta["application_reference"],
+            reference=response.meta["application_reference"],
+            geometry=geometry,
+        )
+
+    def _parse_date(self, date_str: str | None) -> datetime | None:
         if not date_str:
             return None
         return datetime.strptime(date_str.strip(), "%d/%m/%Y")

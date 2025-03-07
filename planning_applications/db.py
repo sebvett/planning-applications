@@ -9,6 +9,7 @@ from planning_applications.items import (
     PlanningApplicationAppeal,
     PlanningApplicationAppealDocument,
     PlanningApplicationDocument,
+    PlanningApplicationGeometry,
     PlanningApplicationItem,
 )
 from planning_applications.settings import DEFAULT_DATE_FORMAT
@@ -374,7 +375,9 @@ def upsert_planning_application_document(
 
 
 def upsert_planning_application_geometry(
-    cursor: psycopg.Cursor, uuid: str, geometry: IdoxPlanningApplicationGeometry
+    cursor: psycopg.Cursor,
+    planning_application_uuid: str,
+    geometry: PlanningApplicationGeometry | IdoxPlanningApplicationGeometry,
 ) -> str:
     cursor.execute(
         """ INSERT INTO planning_application_geometries (
@@ -388,7 +391,7 @@ def upsert_planning_application_geometry(
                 last_imported_at = NOW()
             RETURNING uuid;
 """,
-        (uuid, geometry.reference, geometry.geometry),
+        (planning_application_uuid, geometry.reference, geometry.geometry),
     )
 
     row = cursor.fetchone()
