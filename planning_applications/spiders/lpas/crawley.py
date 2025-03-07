@@ -206,6 +206,8 @@ class CrawleySpider(BaseSpider):
                 doc_description = doc_description.strip()
 
             yield PlanningApplicationDocument(
+                lpa=self.name,
+                application_reference=application_number,
                 url=response.urljoin(doc_link),
                 document_type=document_type,
                 date_published=doc_date,

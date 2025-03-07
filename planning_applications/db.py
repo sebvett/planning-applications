@@ -86,6 +86,21 @@ def select_planning_application_by_url(url: str) -> Optional[PlanningApplication
     )
 
 
+def get_planning_application_uuid_for_lpa_and_reference(
+    cursor: psycopg.Cursor, lpa: str, reference: str
+) -> str | None:
+    cursor.execute(
+        """
+        SELECT uuid FROM planning_applications WHERE lpa = %s AND reference = %s
+        """,
+        (lpa, reference),
+    )
+    row = cursor.fetchone()
+    if not row:
+        return None
+    return row[0]
+
+
 def get_earliest_date_for_lpa(lpa: str) -> Optional[date]:
     """Get the earliest validated_date for an LPA from the database."""
     conn = get_connection()
@@ -116,7 +131,117 @@ def get_earliest_date_for_lpa(lpa: str) -> Optional[date]:
 # -------------------------------------------------------------------------------------------------
 
 
-def upsert_planning_application(cursor: psycopg.Cursor, item: PlanningApplicationItem) -> str:
+def upsert_planning_application(cursor: psycopg.Cursor, item: PlanningApplication) -> str:
+    cursor.execute(
+        """ INSERT INTO planning_applications (
+                lpa,
+                reference,
+                website_reference,
+                url,
+                submitted_date,
+                validated_date,
+                address,
+                description,
+                application_status,
+                application_decision,
+                application_decision_date,
+                appeal_status,
+                appeal_decision,
+                appeal_decision_date,
+                application_type,
+                expected_decision_level,
+                actual_decision_level,
+                case_officer,
+                case_officer_phone,
+                parish,
+                ward,
+                amenity_society,
+                comments_due_date,
+                committee_date,
+                district_reference,
+                applicant_name,
+                applicant_address,
+                agent_name,
+                agent_address,
+                environmental_assessment_requested,
+                is_active
+            ) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+            ON CONFLICT (lpa, reference)
+            DO UPDATE SET
+                website_reference = EXCLUDED.website_reference,
+                url = EXCLUDED.url,
+                submitted_date = EXCLUDED.submitted_date,
+                validated_date = EXCLUDED.validated_date,
+                address = EXCLUDED.address,
+                description = EXCLUDED.description,
+                application_status = EXCLUDED.application_status,
+                application_decision = EXCLUDED.application_decision,
+                application_decision_date = EXCLUDED.application_decision_date,
+                appeal_status = EXCLUDED.appeal_status,
+                appeal_decision = EXCLUDED.appeal_decision,
+                appeal_decision_date = EXCLUDED.appeal_decision_date,
+                application_type = EXCLUDED.application_type,
+                expected_decision_level = EXCLUDED.expected_decision_level,
+                actual_decision_level = EXCLUDED.actual_decision_level,
+                case_officer = EXCLUDED.case_officer,
+                case_officer_phone = EXCLUDED.case_officer_phone,
+                parish = EXCLUDED.parish,
+                ward = EXCLUDED.ward,
+                amenity_society = EXCLUDED.amenity_society,
+                comments_due_date = EXCLUDED.comments_due_date,
+                committee_date = EXCLUDED.committee_date,
+                district_reference = EXCLUDED.district_reference,
+                applicant_name = EXCLUDED.applicant_name,
+                applicant_address = EXCLUDED.applicant_address,
+                agent_name = EXCLUDED.agent_name,
+                agent_address = EXCLUDED.agent_address,
+                environmental_assessment_requested = EXCLUDED.environmental_assessment_requested,
+                is_active = EXCLUDED.is_active,
+                last_imported_at = NOW()
+            RETURNING uuid;
+            """,
+        (
+            item.lpa,
+            item.reference,
+            item.website_reference,
+            item.url,
+            item.submitted_date,
+            item.validated_date,
+            item.address,
+            item.description,
+            item.application_status,
+            item.application_decision,
+            item.application_decision_date,
+            item.appeal_status,
+            item.appeal_decision,
+            item.appeal_decision_date,
+            item.application_type,
+            item.expected_decision_level,
+            item.actual_decision_level,
+            item.case_officer,
+            item.case_officer_phone,
+            item.parish,
+            item.ward,
+            item.amenity_society,
+            item.comments_due_date,
+            item.committee_date,
+            item.district_reference,
+            item.applicant_name,
+            item.applicant_address,
+            item.agent_name,
+            item.agent_address,
+            item.environmental_assessment_requested,
+            item.is_active,
+        ),
+    )
+
+    row = cursor.fetchone()
+    if not row:
+        raise ValueError("No row returned from the upsert query!")
+    return row[0]
+
+
+def upsert_planning_application_item(cursor: psycopg.Cursor, item: PlanningApplicationItem) -> str:
     cursor.execute(
         """ INSERT INTO planning_applications (
                 lpa,
@@ -212,7 +337,7 @@ def upsert_planning_application(cursor: psycopg.Cursor, item: PlanningApplicatio
 
 
 def upsert_planning_application_document(
-    cursor: psycopg.Cursor, uuid: str, document: PlanningApplicationDocument
+    cursor: psycopg.Cursor, planning_application_uuid: str, document: PlanningApplicationDocument
 ) -> str:
     cursor.execute(
         """ INSERT INTO planning_application_documents (
@@ -233,7 +358,7 @@ def upsert_planning_application_document(
             RETURNING uuid;
             """,
         (
-            uuid,
+            planning_application_uuid,
             document.date_published,
             document.document_type,
             document.description,

@@ -45,6 +45,8 @@ class PlanningApplication(pydantic.BaseModel):
 
 
 class PlanningApplicationDocument(pydantic.BaseModel):
+    lpa: str
+    application_reference: str
     url: str
     date_published: Optional[datetime] = None
     document_type: Optional[str] = None
