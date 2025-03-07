@@ -195,7 +195,12 @@ class IdoxSpider(BaseSpider):
 
         item = IdoxPlanningApplicationDetailsSummary()
 
-        summary_table = response.css("#simpleDetailsTable")[0]
+        summary_table = response.css("#simpleDetailsTable")
+        if not summary_table:
+            self.logger.error(f"No summary table found on {response.url}")
+            return
+
+        summary_table = summary_table[0]
 
         item.reference = self._get_horizontal_table_value(summary_table, "Reference")
         application_received = self._get_horizontal_table_value(summary_table, "Application Received")
