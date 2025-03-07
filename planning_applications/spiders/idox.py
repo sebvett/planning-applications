@@ -309,6 +309,8 @@ class IdoxSpider(BaseSpider):
         description = description_cell.xpath("./text()").get() if description_cell else None
 
         return PlanningApplicationDocument(
+            lpa=self.name,
+            application_reference=response.meta["details_summary"].reference,
             date_published=date_published,
             document_type=document_type,
             drawing_number=drawing_number,
