@@ -3,11 +3,7 @@ from typing import Any, Callable, List
 
 import scrapy
 
-from planning_applications.items import (
-    PlanningApplication,
-    PlanningApplicationDocumentsDocument,
-    PlanningApplicationItem,
-)
+from planning_applications.items import PlanningApplication, PlanningApplicationDocumentsDocument
 from planning_applications.settings import DEFAULT_DATE_FORMAT
 from planning_applications.spiders.base import BaseSpider
 
@@ -130,7 +126,7 @@ class CrawleySpider(BaseSpider):
             label = row.xpath('./ancestor::div[contains(@class, "form-group")]/label/text()').get()
             if label:
                 label = label.strip()
-                value = row.get().strip() if row.get() else None
+                value = row.css("span::text").get().strip() if row.css("span::text").get() else None
                 details[label] = value
 
         # application
@@ -143,17 +139,17 @@ class CrawleySpider(BaseSpider):
         case_officer_phone = details.get("Phone")
         address = details.get("Location")
         proposal = details.get("Proposal")
-        submitted_date = details.get("Registered Date")
-        comments_due_date = details.get("Comments Due Date")
-        target_decision_date = details.get("Target Decision Date")
-        committee_date = details.get("Committee Date")
+        submitted_date = self.parse_date(details.get("Registered Date"))
+        comments_due_date = self.parse_date(details.get("Comments Due Date"))
+        target_decision_date = self.parse_date(details.get("Target Decision Date"))
+        committee_date = self.parse_date(details.get("Committee Date"))
         decision = details.get("Decision")
         applicant_name = details.get("Applicant")
         applicant_address = details.get("Applicant's Address")
         agent_name = details.get("Agent")
         agent_address = details.get("Agent's Address")
 
-        if not application_number or not submitted_date:
+        if not application_number or not submitted_date or not submitted_date:
             self.logger.warn(f"Missing required fields for application at {response.url}")
             return
 
@@ -215,3 +211,8 @@ class CrawleySpider(BaseSpider):
                 date_published=doc_date,
                 description=doc_description,
             )
+
+    def parse_date(self, date_str: str | None) -> datetime | None:
+        if not date_str:
+            return None
+        return datetime.strptime(date_str.strip(), "%d/%m/%Y")
