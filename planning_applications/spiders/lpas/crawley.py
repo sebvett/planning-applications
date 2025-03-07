@@ -3,7 +3,7 @@ from typing import Any, Callable, List
 
 import scrapy
 
-from planning_applications.items import PlanningApplication, PlanningApplicationDocumentsDocument
+from planning_applications.items import PlanningApplication, PlanningApplicationDocument
 from planning_applications.settings import DEFAULT_DATE_FORMAT
 from planning_applications.spiders.base import BaseSpider
 
@@ -205,7 +205,7 @@ class CrawleySpider(BaseSpider):
             if doc_description:
                 doc_description = doc_description.strip()
 
-            yield PlanningApplicationDocumentsDocument(
+            yield PlanningApplicationDocument(
                 url=response.urljoin(doc_link),
                 document_type=document_type,
                 date_published=doc_date,

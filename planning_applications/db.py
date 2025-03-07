@@ -8,7 +8,7 @@ from planning_applications.items import (
     PlanningApplication,
     PlanningApplicationAppeal,
     PlanningApplicationAppealDocument,
-    PlanningApplicationDocumentsDocument,
+    PlanningApplicationDocument,
     PlanningApplicationItem,
 )
 from planning_applications.settings import DEFAULT_DATE_FORMAT
@@ -212,7 +212,7 @@ def upsert_planning_application(cursor: psycopg.Cursor, item: PlanningApplicatio
 
 
 def upsert_planning_application_document(
-    cursor: psycopg.Cursor, uuid: str, document: PlanningApplicationDocumentsDocument
+    cursor: psycopg.Cursor, uuid: str, document: PlanningApplicationDocument
 ) -> str:
     cursor.execute(
         """ INSERT INTO planning_application_documents (

@@ -19,8 +19,10 @@ from planning_applications.db import (
 from planning_applications.items import (
     IdoxPlanningApplicationGeometry,
     IdoxPlanningApplicationItem,
+    PlanningApplication,
     PlanningApplicationAppeal,
     PlanningApplicationAppealDocument,
+    PlanningApplicationDocument,
     PlanningApplicationItem,
 )
 from planning_applications.utils import getenv, hasenv
@@ -74,7 +76,15 @@ class PostgresPipeline:
         self.connection = get_connection()
         self.cur = get_cursor(self.connection)
 
-    def process_item(self, item: PlanningApplicationItem | PlanningApplicationAppeal, spider):
+    def process_item(
+        self,
+        item: PlanningApplication
+        | PlanningApplicationDocument
+        | PlanningApplicationAppeal
+        | PlanningApplicationAppealDocument
+        | PlanningApplicationItem,
+        spider,
+    ):
         if isinstance(item, PlanningApplicationAppealDocument):
             return self.process_appeal_case_document_item(item, spider)
 
