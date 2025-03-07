@@ -15,7 +15,7 @@ from planning_applications.items import (
     IdoxPlanningApplicationDetailsSummary,
     IdoxPlanningApplicationGeometry,
     IdoxPlanningApplicationItem,
-    PlanningApplicationDocumentsDocument,
+    PlanningApplicationDocument,
 )
 from planning_applications.settings import DEFAULT_DATE_FORMAT
 from planning_applications.spiders.base import BaseSpider
@@ -195,7 +195,12 @@ class IdoxSpider(BaseSpider):
 
         item = IdoxPlanningApplicationDetailsSummary()
 
-        summary_table = response.css("#simpleDetailsTable")[0]
+        summary_table = response.css("#simpleDetailsTable")
+        if not summary_table:
+            self.logger.error(f"No summary table found on {response.url}")
+            return
+
+        summary_table = summary_table[0]
 
         item.reference = self._get_horizontal_table_value(summary_table, "Reference")
         application_received = self._get_horizontal_table_value(summary_table, "Application Received")
@@ -308,7 +313,9 @@ class IdoxSpider(BaseSpider):
         drawing_number = drawing_number_cell.xpath("./text()").get() if drawing_number_cell else None
         description = description_cell.xpath("./text()").get() if description_cell else None
 
-        return PlanningApplicationDocumentsDocument(
+        return PlanningApplicationDocument(
+            lpa=self.name,
+            application_reference=response.meta["details_summary"].reference,
             date_published=date_published,
             document_type=document_type,
             drawing_number=drawing_number,
@@ -399,7 +406,7 @@ class IdoxSpider(BaseSpider):
             "details_further_information"
         ]
         is_active = self._is_active(details_summary.decision, details_summary.decision_issued_date)
-        documents: List[PlanningApplicationDocumentsDocument] = meta["documents"]
+        documents: List[PlanningApplicationDocument] = meta["documents"]
         geometry: IdoxPlanningApplicationGeometry = meta["geometry"]
 
         item = IdoxPlanningApplicationItem(

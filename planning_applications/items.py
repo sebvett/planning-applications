@@ -1,8 +1,10 @@
+import warnings
 from datetime import datetime
 from typing import List, Optional
 
 import pydantic
 import scrapy
+from typing_extensions import deprecated
 
 # ---------------------------------------------------------------------------------------------------------------------
 # Base
@@ -27,17 +29,24 @@ class PlanningApplication(pydantic.BaseModel):
     expected_decision_level: Optional[str] = None
     actual_decision_level: Optional[str] = None
     case_officer: Optional[str] = None
+    case_officer_phone: Optional[str] = None
     parish: Optional[str] = None
     ward: Optional[str] = None
     amenity_society: Optional[str] = None
+    comments_due_date: Optional[datetime] = None
+    committee_date: Optional[datetime] = None
     district_reference: Optional[str] = None
     applicant_name: Optional[str] = None
     applicant_address: Optional[str] = None
+    agent_name: Optional[str] = None
+    agent_address: Optional[str] = None
     environmental_assessment_requested: Optional[bool] = None
     is_active: bool
 
 
-class PlanningApplicationDocumentsDocument(pydantic.BaseModel):
+class PlanningApplicationDocument(pydantic.BaseModel):
+    lpa: str
+    application_reference: str
     url: str
     date_published: Optional[datetime] = None
     document_type: Optional[str] = None
@@ -45,6 +54,14 @@ class PlanningApplicationDocumentsDocument(pydantic.BaseModel):
     drawing_number: Optional[str] = None
 
 
+class PlanningApplicationGeometry(pydantic.BaseModel):
+    lpa: str
+    application_reference: str
+    reference: str
+    geometry: str = pydantic.Field(repr=False)
+
+
+@deprecated("Use PlanningApplication instead")
 class PlanningApplicationItem(scrapy.Item):
     lpa = scrapy.Field()
     website_reference = scrapy.Field()
@@ -64,12 +81,17 @@ class PlanningApplicationItem(scrapy.Item):
     expected_decision_level = scrapy.Field()
     actual_decision_level = scrapy.Field()
     case_officer = scrapy.Field()
+    case_officer_phone = scrapy.Field()
     parish = scrapy.Field()
     ward = scrapy.Field()
     amenity_society = scrapy.Field()
+    comments_due_date = scrapy.Field()
+    committee_date = scrapy.Field()
     district_reference = scrapy.Field()
     applicant_name = scrapy.Field()
     applicant_address = scrapy.Field()
+    agent_name = scrapy.Field()
+    agent_address = scrapy.Field()
     environmental_assessment_requested = scrapy.Field()
     is_active = scrapy.Field()
     documents = scrapy.Field()
@@ -108,7 +130,7 @@ class IdoxPlanningApplicationDetailsFurtherInformation(pydantic.BaseModel):
 
 
 class IdoxPlanningApplicationDocuments(pydantic.BaseModel):
-    documents: Optional[List[PlanningApplicationDocumentsDocument]] = None
+    documents: Optional[List[PlanningApplicationDocument]] = None
 
 
 class IdoxPlanningApplicationGeometry(pydantic.BaseModel):

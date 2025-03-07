@@ -10,17 +10,22 @@ from botocore.exceptions import ClientError
 from planning_applications.db import (
     get_connection,
     get_cursor,
+    get_planning_application_uuid_for_lpa_and_reference,
     upsert_planning_application,
     upsert_planning_application_appeal,
     upsert_planning_application_appeal_document,
     upsert_planning_application_document,
     upsert_planning_application_geometry,
+    upsert_planning_application_item,
 )
 from planning_applications.items import (
     IdoxPlanningApplicationGeometry,
     IdoxPlanningApplicationItem,
+    PlanningApplication,
     PlanningApplicationAppeal,
     PlanningApplicationAppealDocument,
+    PlanningApplicationDocument,
+    PlanningApplicationGeometry,
     PlanningApplicationItem,
 )
 from planning_applications.utils import getenv, hasenv
@@ -74,15 +79,61 @@ class PostgresPipeline:
         self.connection = get_connection()
         self.cur = get_cursor(self.connection)
 
-    def process_item(self, item: PlanningApplicationItem | PlanningApplicationAppeal, spider):
+    def process_item(
+        self,
+        item: PlanningApplication
+        | PlanningApplicationDocument
+        | PlanningApplicationAppeal
+        | PlanningApplicationAppealDocument
+        | PlanningApplicationGeometry
+        | PlanningApplicationItem,
+        spider,
+    ):
+        if isinstance(item, PlanningApplication):
+            return self.process_planning_application(item, spider)
+
+        if isinstance(item, PlanningApplicationDocument):
+            return self.process_planning_application_document(item, spider)
+
         if isinstance(item, PlanningApplicationAppealDocument):
             return self.process_appeal_case_document_item(item, spider)
 
         if isinstance(item, PlanningApplicationAppeal):
             return self.process_appeal_case_item(item, spider)
 
+        if isinstance(item, PlanningApplicationGeometry):
+            return self.process_planning_application_geometry(item, spider)
+
         if isinstance(item, PlanningApplicationItem):
             return self.process_planning_application_item(item, spider)
+
+    def process_planning_application(self, item: PlanningApplication, spider):
+        spider.logger.info(f"Inserting planning application {item.reference}")
+        try:
+            _ = upsert_planning_application(self.cur, item)
+            self.connection.commit()
+        except Exception as e:
+            spider.logger.error(f"Error inserting planning application into the database: {e}")
+            self.connection.rollback()
+            raise
+
+    def process_planning_application_document(self, item: PlanningApplicationDocument, spider):
+        spider.logger.info(f"Inserting planning application document {item.url}")
+        try:
+            application_uuid = get_planning_application_uuid_for_lpa_and_reference(
+                self.cur, item.lpa, item.application_reference
+            )
+            if not application_uuid:
+                spider.logger.error(
+                    f"Planning application not found for {item.application_reference}, unable to save document"
+                )
+                return item
+
+            _ = upsert_planning_application_document(self.cur, application_uuid, item)
+
+            self.connection.commit()
+        except Exception:
+            self.connection.rollback()
 
     def process_appeal_case_item(self, item: PlanningApplicationAppeal, spider):
         spider.logger.info(f"Inserting planning application appeal {item.reference}")
@@ -108,7 +159,7 @@ class PostgresPipeline:
         spider.logger.info(f"Inserting planning application {item['reference']}")
 
         try:
-            uuid = upsert_planning_application(self.cur, item)
+            uuid = upsert_planning_application_item(self.cur, item)
 
             for document in item["documents"]:
                 _ = upsert_planning_application_document(self.cur, uuid, document)
@@ -124,6 +175,23 @@ class PostgresPipeline:
             raise
 
         return item
+
+    def process_planning_application_geometry(self, item: PlanningApplicationGeometry, spider):
+        spider.logger.info(f"Inserting planning application geometry {item.reference}")
+        try:
+            application_uuid = get_planning_application_uuid_for_lpa_and_reference(
+                self.cur, item.lpa, item.application_reference
+            )
+            if not application_uuid:
+                spider.logger.error(
+                    f"Planning application not found for {item.application_reference}, unable to save geometry"
+                )
+                return item
+
+            _ = upsert_planning_application_geometry(self.cur, application_uuid, item)
+            self.connection.commit()
+        except Exception:
+            self.connection.rollback()
 
     def close_spider(self, spider):
         self.cur.close()
