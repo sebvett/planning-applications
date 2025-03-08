@@ -74,11 +74,19 @@ def parse_lpa_dates(lpa_dates: List[str]) -> List[Tuple[str, date, date]]:
 def get_spider_info(
     name: str, from_earliest: bool = False, lpa_dates: Optional[List[Tuple[str, date, date]]] = None
 ) -> Tuple[str, str, str | None, str, str] | None:
+    earliest_date = None
+    start = None
+    end = None
+
     if lpa_dates:
         mode = "LPA Dates"
         lpa_config = next((x for x in lpa_dates if x[0] == name), None)
         if lpa_config:
             start, end = lpa_config[1], lpa_config[2]
+        else:
+            print(f"[yellow]No LPA date config found for {name}. Skipping spider.[/yellow]")
+            return None
+
     elif from_earliest:
         mode = "From Earliest"
         earliest_date = get_earliest_date_for_lpa(name)
@@ -95,11 +103,15 @@ def get_spider_info(
         print(f"[yellow]No option passed. Skipping spider {name}[/yellow]")
         return None
 
-    earliest_date = earliest_date.strftime(DEFAULT_DATE_FORMAT) if earliest_date else None
-    start = start.strftime(DEFAULT_DATE_FORMAT)
-    end = end.strftime(DEFAULT_DATE_FORMAT)
+    earliest_date_str = earliest_date.strftime(DEFAULT_DATE_FORMAT) if earliest_date else None
+    start_str = start.strftime(DEFAULT_DATE_FORMAT) if start else None
+    end_str = end.strftime(DEFAULT_DATE_FORMAT) if end else None
 
-    return name, mode, earliest_date, start, end
+    if not start_str or not end_str:
+        print(f"[yellow]No start and/or end date found for {name}. Skipping spider.[/yellow]")
+        return None
+
+    return name, mode, earliest_date_str, start_str, end_str
 
 
 def run_spiders(
@@ -111,7 +123,9 @@ def run_spiders(
 
     spider_info = []
     for spider_name in spider_names:
-        spider_info.append(get_spider_info(spider_name, from_earliest, lpa_dates))
+        row = get_spider_info(spider_name, from_earliest, lpa_dates)
+        if row:
+            spider_info.append(row)
 
     table = Table(title="Spider Dates Summary")
     table.add_column("Spider", style="cyan")
