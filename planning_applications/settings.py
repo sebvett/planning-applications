@@ -9,10 +9,12 @@
 
 import scrapy_colorlog
 
-from planning_applications.utils import getenv
+from planning_applications.utils import getenv, hasenv
+
+SCRAPEOPS_API_KEY = getenv("SCRAPEOPS_API_KEY")
+ZYTE_API_KEY = getenv("ZYTE_API_KEY")
 
 scrapy_colorlog.install()
-
 
 BOT_NAME = "planning_applications"
 
@@ -21,7 +23,7 @@ NEWSPIDER_MODULE = "planning_applications.spiders"
 
 
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
-# USER_AGENT = "planning_applications (+http://www.yourdomain.com)"
+USER_AGENT = getenv("USER_AGENT") if hasenv("USER_AGENT") else "planning_applications"
 
 # Obey robots.txt rules
 ROBOTSTXT_OBEY = False
@@ -52,27 +54,30 @@ COOKIES_ENABLED = True
 
 # Enable or disable spider middlewares
 # See https://docs.scrapy.org/en/latest/topics/spider-middleware.html
-# SPIDER_MIDDLEWARES = {
-#    "planning_applications.middlewares.PlanningApplicationsSpiderMiddleware": 543,
-# }
+SPIDER_MIDDLEWARES = {
+    "shared.middlewares.LogScraperRunMiddleware": 543,
+}
 
 # Enable or disable downloader middlewares
 # See https://docs.scrapy.org/en/latest/topics/downloader-middleware.html
-# DOWNLOADER_MIDDLEWARES = {
-#    "planning_applications.middlewares.PlanningApplicationsDownloaderMiddleware": 543,
-# }
+DOWNLOADER_MIDDLEWARES = {
+    "scrapeops_scrapy.middleware.retry.RetryMiddleware": 550,
+    "scrapy.downloadermiddlewares.retry.RetryMiddleware": None,
+}
 
 # Enable or disable extensions
 # See https://docs.scrapy.org/en/latest/topics/extensions.html
-# EXTENSIONS = {
-#    "scrapy.extensions.telnet.TelnetConsole": None,
-# }
+EXTENSIONS = {
+    #    "scrapy.extensions.telnet.TelnetConsole": None,
+    "scrapeops_scrapy.extension.ScrapeOpsMonitor": 500,
+}
 
 # Configure item pipelines
 # See https://docs.scrapy.org/en/latest/topics/item-pipeline.html
 ITEM_PIPELINES = {
     "planning_applications.pipelines.IdoxPlanningApplicationPipeline": 200,
-    "planning_applications.pipelines.PostgresPipeline": 300,
+    "planning_applications.pipelines.S3FileDownloadPipeline": 300,
+    "planning_applications.pipelines.PostgresPipeline": 400,
 }
 
 # Enable and configure the AutoThrottle extension (disabled by default)
@@ -102,8 +107,6 @@ FEED_EXPORT_ENCODING = "utf-8"
 
 DEFAULT_DATE_FORMAT = "%Y-%m-%d"
 
-ZYTE_API_KEY = getenv("ZYTE_API_KEY")
-
 ADDONS = {
     "scrapy_zyte_api.Addon": 500,
 }
@@ -111,7 +114,7 @@ ADDONS = {
 ZYTE_API_EXPERIMENTAL_COOKIES_ENABLED = True
 
 # LOG_FILE = "log.txt"
-LOG_LEVEL = "INFO"
+LOG_LEVEL = "DEBUG"
 
 # FEEDS = {
 #     "output/output.json": {
@@ -125,3 +128,10 @@ LOG_LEVEL = "INFO"
 DEPTH_PRIORITY = 1
 SCHEDULER_DISK_QUEUE = "scrapy.squeues.PickleFifoDiskQueue"
 SCHEDULER_MEMORY_QUEUE = "scrapy.squeues.FifoMemoryQueue"
+
+DOWNLOAD_FILES = False
+PLANNING_APPLICATIONS_BUCKET_NAME = getenv("PLANNING_APPLICATIONS_BUCKET_NAME") or None
+
+RETRY_ENABLED = True
+RETRY_DELAY = 5
+RETRY_HTTP_CODES = [400, 408, 421, 429, 500, 502, 503, 504, 520, 521, 522, 524]

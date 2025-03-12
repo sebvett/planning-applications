@@ -1,11 +1,17 @@
 import os
-from calendar import monthrange
+import subprocess
+import tempfile
 from datetime import date, datetime
-from typing import Optional, Tuple
+from typing import Optional
 
+import scrapy.http.response
 from dotenv import load_dotenv
 
 load_dotenv()
+
+
+def hasenv(name: str) -> bool:
+    return os.getenv(name) is not None
 
 
 def getenv(name: str) -> str:
@@ -15,25 +21,22 @@ def getenv(name: str) -> str:
     return value
 
 
-def previous_month(some_date: date) -> Tuple[date, date]:
-    year = some_date.year
-    month = some_date.month
-    if month == 1:
-        new_year = year - 1
-        new_month = 12
-    else:
-        new_year = year
-        new_month = month - 1
-    last_day = monthrange(new_year, new_month)[1]
-    return date(new_year, new_month, 1), date(new_year, new_month, last_day)
-
-
-def to_datetime_or_none(value: Optional[str]) -> Optional[datetime]:
-    # If it's None, just return None
+def to_datetime_or_none(value: Optional[str | datetime | date]) -> Optional[datetime]:
     if value is None:
         return None
-    # If it's already a datetime, just return it
     if isinstance(value, datetime):
         return value
-    # Otherwise, assume it's a string and parse
+    if isinstance(value, date):
+        return datetime.combine(value, datetime.min.time())
     return datetime.fromisoformat(value)
+
+
+def open_in_browser(response: scrapy.http.response.Response):
+    with tempfile.NamedTemporaryFile(suffix=".html", delete=False) as temp:
+        temp.write(response.text.encode("utf-8"))
+        temp.seek(0)
+        subprocess.run(["open", temp.name])
+
+
+def multiline_css(response: scrapy.http.response.Response, selector: str, join_with: str = "\n") -> str | None:
+    return join_with.join(response.css(selector).getall()) or None

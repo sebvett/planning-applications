@@ -213,7 +213,6 @@
 | Newport                                            | Idox       | [Link](https://publicaccess.newport.gov.uk/online-applications)                                                                        |
 | Newry Mourne Down                                  | NIPP       | [Link](https://planningregister.planningsystemni.gov.uk)                                                                               |
 | Norfolk                                            | Custom     | [Link](https://eplanning.norfolk.gov.uk/Search/Advanced)                                                                               |
-| North Norfolk                                      | Idox       | [Link](https://idoxpa.north-norfolk.gov.uk/online-applications)                                                                        |
 | North Devon                                        | Custom     | [Link](https://planning.northdevon.gov.uk/Search/Advanced)                                                                             |
 | North East Derbyshire                              | Idox       | [Link](https://planapps-online.ne-derbyshire.gov.uk/online-applications)                                                               |
 | North East Lincolnshire                            | Idox       | [Link](http://planninganddevelopment.nelincs.gov.uk/online-applications)                                                               |
@@ -221,6 +220,7 @@
 | North Kesteven                                     | Idox       | [Link](https://planningonline.n-kesteven.gov.uk/online-applications)                                                                   |
 | North Lanark                                       | Idox       | [Link](https://eplanning.northlanarkshire.gov.uk/online-applications)                                                                  |
 | North Lincolnshire                                 | Custom     | [Link](https://apps.northlincs.gov.uk)                                                                                                 |
+| North Norfolk                                      | Idox       | [Link](https://idoxpa.north-norfolk.gov.uk/online-applications)                                                                        |
 | North Northamptonshire (Corby)                     | Idox       | [Link](https://publicaccess.corby.gov.uk/publicaccess)                                                                                 |
 | North Northamptonshire (East Northamptonshire)     | Idox       | [Link](https://publicaccess.east-northamptonshire.gov.uk/online-applications)                                                          |
 | North Northamptonshire (Kettering)                 | Custom     | [Link](https://www.kettering.gov.uk/planningApplication/search)                                                                        |
@@ -258,7 +258,7 @@
 | Redbridge                                          | Agile      | [Link](https://planning.redbridge.gov.uk/redbridge/search-applications)                                                                |
 | Redcar and Cleveland                               | Custom     | [Link](https://planning.redcar-cleveland.gov.uk/Search/Planning/Advanced)                                                              |
 | Redditch                                           | Idox       | [Link](https://publicaccess.bromsgroveandredditch.gov.uk/online-applications)                                                          |
-| Reigate                                            | Idox       | [Link](https://planning.reigate-banstead.gov.uk/online-applications)                                                                   |
+| Reigate and Banstead                               | Idox       | [Link](https://planning.reigate-banstead.gov.uk/online-applications)                                                                   |
 | Renfrewshire                                       | Idox       | [Link](https://pl-bs.renfrewshire.gov.uk/online-applications)                                                                          |
 | Rhondda                                            | Idox       | [Link](https://plan.rctcbc.gov.uk/online-applications)                                                                                 |
 | Ribble Valley                                      | Custom     | [Link](https://webportal.ribblevalley.gov.uk/planningApplication/search/advanced)                                                      |
@@ -308,7 +308,6 @@
 | Spelthorne                                         | Idox       | [Link](https://publicaccess.spelthorne.gov.uk/online-applications)                                                                     |
 | St Albans                                          | Custom     | [Link](https://planningapplications.stalbans.gov.uk/planning/search-applications?s=c4c143aa604d31e7a059fcb60a1537842a5749a8)           |
 | Stafford                                           | Idox       | [Link](https://www12.staffordbc.gov.uk/online-applications)                                                                            |
-| Staffordshire                                      | Idox       | [Link](https://www12.staffordbc.gov.uk/online-applications)                                                                            |
 | Staffordshire Moorlands                            | Custom     | [Link](http://publicaccess.staffsmoorlands.gov.uk/portal/servlets/ApplicationSearchServlet)                                            |
 | Stevenage                                          | Idox       | [Link](https://publicaccess.stevenage.gov.uk/online-applications)                                                                      |
 | Stirling                                           | Idox       | [Link](https://pabs.stirling.gov.uk/online-applications)                                                                               |
@@ -349,7 +348,6 @@
 | Wandsworth                                         | Northgate  | [Link](https://planning.wandsworth.gov.uk/Northgate/PlanningExplorer/GeneralSearch.aspx)                                               |
 | Warrington                                         | SmartAdmin | [Link](https://online.warrington.gov.uk/planning/index.html?fa=search)                                                                 |
 | Warwick                                            | Idox       | [Link](https://planningdocuments.warwickdc.gov.uk/online-applications)                                                                 |
-| Warwickshire                                       | Idox       | [Link](https://planningdocuments.warwickdc.gov.uk/online-applications)                                                                 |
 | Watford                                            | Idox       | [Link](https://pa.watford.gov.uk/publicaccess)                                                                                         |
 | Wealden                                            | Custom     | [Link](https://planning.wealden.gov.uk)                                                                                                |
 | Welwyn Hatfield                                    | Custom     | [Link](https://planning.welhat.gov.uk/Search/Advanced)                                                                                 |
@@ -379,3 +377,4 @@
 | Wyre Forest                                        | Idox       | [Link](https://planningpa.wyreforestdc.gov.uk/online-applications)                                                                     |
 | York                                               | Idox       | [Link](https://planningaccess.york.gov.uk/online-applications)                                                                         |
 | Yorkshire Dales                                    | Agile      | [Link](https://planning.agileapplications.co.uk/yorkshiredales/search-applications)                                                    |
+| Planning Inspectorate (Planning Appeals)           | Custom     | [Link](https://acp.planninginspectorate.gov.uk/)                                                                                       |

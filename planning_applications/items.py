@@ -1,21 +1,10 @@
+import warnings
 from datetime import datetime
-from enum import Enum
 from typing import List, Optional
 
 import pydantic
 import scrapy
-
-
-class applicationStatus(Enum):
-    ALL = ""
-    APPEAL_DECIDED = "Appeal decided"
-    APPEAL_LODGED = "Appeal lodged"
-    AWAITING_DECISION = "Awaiting decision"
-    DECIDED = "Decided"
-    REGISTERED = "Registered"
-    UNKNOWN = "Unknown"
-    WITHDRAWN = "Withdrawn"
-
+from typing_extensions import deprecated
 
 # ---------------------------------------------------------------------------------------------------------------------
 # Base
@@ -30,7 +19,7 @@ class PlanningApplication(pydantic.BaseModel):
     validated_date: datetime
     address: Optional[str] = None
     description: Optional[str] = None
-    application_status: applicationStatus
+    application_status: Optional[str] = None
     application_decision: Optional[str] = None
     application_decision_date: Optional[datetime] = None
     appeal_status: Optional[str] = None
@@ -40,17 +29,24 @@ class PlanningApplication(pydantic.BaseModel):
     expected_decision_level: Optional[str] = None
     actual_decision_level: Optional[str] = None
     case_officer: Optional[str] = None
+    case_officer_phone: Optional[str] = None
     parish: Optional[str] = None
     ward: Optional[str] = None
     amenity_society: Optional[str] = None
+    comments_due_date: Optional[datetime] = None
+    committee_date: Optional[datetime] = None
     district_reference: Optional[str] = None
     applicant_name: Optional[str] = None
     applicant_address: Optional[str] = None
+    agent_name: Optional[str] = None
+    agent_address: Optional[str] = None
     environmental_assessment_requested: Optional[bool] = None
     is_active: bool
 
 
-class PlanningApplicationDocumentsDocument(pydantic.BaseModel):
+class PlanningApplicationDocument(pydantic.BaseModel):
+    lpa: str
+    application_reference: str
     url: str
     date_published: Optional[datetime] = None
     document_type: Optional[str] = None
@@ -58,6 +54,14 @@ class PlanningApplicationDocumentsDocument(pydantic.BaseModel):
     drawing_number: Optional[str] = None
 
 
+class PlanningApplicationGeometry(pydantic.BaseModel):
+    lpa: str
+    application_reference: str
+    reference: str
+    geometry: str = pydantic.Field(repr=False)
+
+
+@deprecated("Use PlanningApplication instead")
 class PlanningApplicationItem(scrapy.Item):
     lpa = scrapy.Field()
     website_reference = scrapy.Field()
@@ -77,12 +81,17 @@ class PlanningApplicationItem(scrapy.Item):
     expected_decision_level = scrapy.Field()
     actual_decision_level = scrapy.Field()
     case_officer = scrapy.Field()
+    case_officer_phone = scrapy.Field()
     parish = scrapy.Field()
     ward = scrapy.Field()
     amenity_society = scrapy.Field()
+    comments_due_date = scrapy.Field()
+    committee_date = scrapy.Field()
     district_reference = scrapy.Field()
     applicant_name = scrapy.Field()
     applicant_address = scrapy.Field()
+    agent_name = scrapy.Field()
+    agent_address = scrapy.Field()
     environmental_assessment_requested = scrapy.Field()
     is_active = scrapy.Field()
     documents = scrapy.Field()
@@ -108,6 +117,7 @@ class IdoxPlanningApplicationDetailsSummary(pydantic.BaseModel):
 
 class IdoxPlanningApplicationDetailsFurtherInformation(pydantic.BaseModel):
     application_type: Optional[str] = None
+    actual_decision_level: Optional[str] = None
     expected_decision_level: Optional[str] = None
     case_officer: Optional[str] = None
     parish: Optional[str] = None
@@ -120,7 +130,7 @@ class IdoxPlanningApplicationDetailsFurtherInformation(pydantic.BaseModel):
 
 
 class IdoxPlanningApplicationDocuments(pydantic.BaseModel):
-    documents: Optional[List[PlanningApplicationDocumentsDocument]] = None
+    documents: Optional[List[PlanningApplicationDocument]] = None
 
 
 class IdoxPlanningApplicationGeometry(pydantic.BaseModel):
@@ -152,6 +162,7 @@ class IdoxPlanningApplicationItem(scrapy.Item):
     appeal_status = scrapy.Field()
     appeal_decision = scrapy.Field()
     application_type = scrapy.Field()
+    actual_decision_level = scrapy.Field()
     expected_decision_level = scrapy.Field()
     case_officer = scrapy.Field()
     parish = scrapy.Field()
@@ -164,3 +175,39 @@ class IdoxPlanningApplicationItem(scrapy.Item):
     is_active = scrapy.Field()
     documents = scrapy.Field()
     geometry = scrapy.Field()
+
+
+# ---------------------------------------------------------------------------------------------------------------------
+# Appeals
+
+
+class PlanningApplicationAppeal(pydantic.BaseModel):
+    lpa: str
+    url: str
+    reference: str
+    case_id: int
+    appellant_name: Optional[str] = None
+    agent_name: Optional[str] = None
+    site_address: Optional[str] = None
+    case_type: Optional[str] = None
+    case_officer: Optional[str] = None
+    procedure: Optional[str] = None
+    status: Optional[str] = None
+    decision: Optional[str] = None
+    start_date: Optional[datetime] = None
+    questionnaire_due_date: Optional[datetime] = None
+    statement_due_date: Optional[datetime] = None
+    interested_party_comments_due_date: Optional[datetime] = None
+    final_comments_due_date: Optional[datetime] = None
+    inquiry_evidence_due_date: Optional[datetime] = None
+    event_date: Optional[datetime] = None
+    decision_date: Optional[datetime] = None
+    linked_case_ids: Optional[List[int]] = None
+
+
+class PlanningApplicationAppealDocument(pydantic.BaseModel):
+    appeal_case_id: int
+    reference: str
+    name: str
+    url: str
+    s3_path: Optional[str] = None

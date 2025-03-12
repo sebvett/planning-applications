@@ -15,15 +15,10 @@ from planning_applications.items import (
     IdoxPlanningApplicationDetailsSummary,
     IdoxPlanningApplicationGeometry,
     IdoxPlanningApplicationItem,
-    PlanningApplicationDocumentsDocument,
-    applicationStatus,
+    PlanningApplicationDocument,
 )
 from planning_applications.settings import DEFAULT_DATE_FORMAT
 from planning_applications.spiders.base import BaseSpider
-from planning_applications.utils import previous_month
-
-DEFAULT_START_DATE = datetime(datetime.now().year, datetime.now().month, 1).date()
-DEFAULT_END_DATE = datetime.now().date()
 
 
 class IdoxSpider(BaseSpider):
@@ -31,9 +26,8 @@ class IdoxSpider(BaseSpider):
     allowed_domains: List[str] = []
     arcgis_url: Optional[str] = None
 
-    start_date: date = DEFAULT_START_DATE
-    end_date: date = DEFAULT_END_DATE
-    filter_status: applicationStatus = applicationStatus.ALL
+    start_date: date
+    end_date: date
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -44,11 +38,8 @@ class IdoxSpider(BaseSpider):
         if isinstance(self.end_date, str):
             self.end_date = datetime.strptime(self.end_date, DEFAULT_DATE_FORMAT).date()
 
-        if isinstance(self.filter_status, str):
-            self.filter_status = applicationStatus(self.filter_status)
-
         if self.start_date > self.end_date:
-            raise ValueError(f"start_date {self.start_date} must be earlier than to_date {self.end_date}")
+            raise ValueError(f"start_date {self.start_date} must be earlier than end_date {self.end_date}")
 
     def start_requests(self) -> Generator[Request, None, None]:
         """
@@ -56,26 +47,21 @@ class IdoxSpider(BaseSpider):
         """
         yield Request(
             self.start_url,
-            callback=self._start_new_month,
+            callback=self._start_new_period,
             errback=self.handle_error,
             dont_filter=True,
         )
 
-    def _start_new_month(self, response: Response):
+    def _start_new_period(self, response: Response):
         """
         We are on the advanced search page.
         Now we can 'submit_form' using the date range in response.meta (start_date, end_date).
         """
-        self.logger.info(f"Scheduling new month {self.start_date} to {self.end_date}")
         yield from self.submit_form(response)
 
     def submit_form(self, response: Response) -> Generator[Request, None, None]:
         self.logger.info(f"Submitting search form on {response.url}")
         formdata = self._build_formdata(response)
-
-        if self.filter_status != applicationStatus.ALL:
-            formdata["caseStatus"] = self.filter_status.value
-
         yield from self._build_formrequest(response, formdata)
 
     def _build_formdata(self, response: Response) -> Dict[str, str]:
@@ -96,15 +82,13 @@ class IdoxSpider(BaseSpider):
             raise ValueError("Response must be a TextResponse")
 
         yield scrapy.FormRequest.from_response(
-            response,
-            formdata=formdata,
-            callback=self.parse_results,
-            meta=response.meta,
-            dont_filter=True,
+            response, formdata=formdata, callback=self.parse_results, meta=response.meta, dont_filter=True
         )
 
     def parse_results(self, response: Response):
-        self.logger.info(f"Parsing results from {response.url}")
+        self.logger.info(
+            f"Parsing results from {response.url} (applications scraped so far: {self.applications_scraped})"
+        )
 
         message_box = response.css(".messagebox")
         if message_box:
@@ -121,21 +105,21 @@ class IdoxSpider(BaseSpider):
         if application_tools:
             self.logger.info(f"Only one application found on {response.url}")
             yield from self.parse_details_summary_tab(response)
-            yield from self._maybe_schedule_previous_month(response)
+            yield from self._maybe_schedule_previous_week(response)
             return
 
         # If #searchresults doesn’t exist or is empty => no apps => schedule previous month
         search_results = response.css("#searchresults")
         if not search_results:
             self.logger.info(f"No #searchresults found on {response.url}")
-            yield from self._maybe_schedule_previous_month(response)
+            yield from self._maybe_schedule_previous_week(response)
             return
 
         # If #searchresults exists but is empty => no apps => schedule previous month
         search_results = search_results[0].css(".searchresult")
         if len(search_results) == 0:
             self.logger.info(f"No applications found on {response.url}")
-            yield from self._maybe_schedule_previous_month(response)
+            yield from self._maybe_schedule_previous_week(response)
             return
 
         self.logger.info(f"Found {len(search_results)} applications on {response.url}")
@@ -144,7 +128,7 @@ class IdoxSpider(BaseSpider):
             self.logger.info(f"Found application: {description}")
 
             if self.applications_scraped >= self.limit:
-                self.logger.info(f"Reached the limit of {self.limit} applications")
+                self.logger.info(f"Reached configured limit of {self.limit} applications, closing spider")
                 return
 
             url = result.css("a::attr(href)").get()
@@ -173,7 +157,8 @@ class IdoxSpider(BaseSpider):
                 dont_filter=True,
             )
         else:
-            yield from self._maybe_schedule_previous_month(response)
+            self.logger.info("No next page found, checking if we should schedule previous week")
+            yield from self._maybe_schedule_previous_week(response)
 
     def _parse_single_result(self, result: Selector, response: Response):
         details_summary_url = result.css("a::attr(href)").get()
@@ -210,7 +195,12 @@ class IdoxSpider(BaseSpider):
 
         item = IdoxPlanningApplicationDetailsSummary()
 
-        summary_table = response.css("#simpleDetailsTable")[0]
+        summary_table = response.css("#simpleDetailsTable")
+        if not summary_table:
+            self.logger.error(f"No summary table found on {response.url}")
+            return
+
+        summary_table = summary_table[0]
 
         item.reference = self._get_horizontal_table_value(summary_table, "Reference")
         application_received = self._get_horizontal_table_value(summary_table, "Application Received")
@@ -248,6 +238,7 @@ class IdoxSpider(BaseSpider):
         details_table = response.css("#applicationDetails")[0]
 
         item.application_type = self._get_horizontal_table_value(details_table, "Application Type")
+        item.actual_decision_level = self._get_horizontal_table_value(details_table, "Actual Decision Level")
         item.expected_decision_level = self._get_horizontal_table_value(details_table, "Expected Decision Level")
         item.case_officer = self._get_horizontal_table_value(details_table, "Case Officer")
         item.parish = self._get_horizontal_table_value(details_table, "Parish")
@@ -322,7 +313,9 @@ class IdoxSpider(BaseSpider):
         drawing_number = drawing_number_cell.xpath("./text()").get() if drawing_number_cell else None
         description = description_cell.xpath("./text()").get() if description_cell else None
 
-        return PlanningApplicationDocumentsDocument(
+        return PlanningApplicationDocument(
+            lpa=self.name,
+            application_reference=response.meta["details_summary"].reference,
             date_published=date_published,
             document_type=document_type,
             drawing_number=drawing_number,
@@ -337,48 +330,49 @@ class IdoxSpider(BaseSpider):
         self.logger.info(f"Parsing ArcGIS for application at {response.meta['url']}")
 
         parsed_response = json.loads(response.text)
-
         item = IdoxPlanningApplicationGeometry(reference=response.meta["details_summary"].reference, geometry=None)
 
-        if not parsed_response["features"]:
+        if not parsed_response.get("features"):
             self.logger.error(f"No features found in response from {response.url}")
+            meta = response.meta
+            meta["geometry"] = item
+            yield from self.create_planning_application_item(meta)
+            return
 
-        if parsed_response["features"][0]["geometry"] is None:
+        feature = parsed_response["features"][0]
+        if not feature.get("geometry"):
             self.logger.error(f"No geometry found in response from {response.url}")
-        elif parsed_response["features"][0]["properties"] is None:
-            self.logger.error(f"No geometry found in response from {response.url}")
-        elif parsed_response["features"][0]["properties"]["KEYVAL"] is None:
+        elif not feature.get("properties"):
+            self.logger.error(f"No properties found in response from {response.url}")
+        elif not feature["properties"].get("KEYVAL"):
             self.logger.error(f"No KEYVAL found in response from {response.url}")
-        elif parsed_response["features"][0]["properties"]["KEYVAL"] != response.meta["keyval"]:
+        elif feature["properties"]["KEYVAL"] != response.meta["keyval"]:
             self.logger.error(f"KEYVAL mismatch in response from {response.url}")
         else:
-            item.geometry = json.dumps(parsed_response["features"][0]["geometry"])
+            item.geometry = json.dumps(feature["geometry"])
 
         meta = response.meta
         meta["geometry"] = item
-
         yield from self.create_planning_application_item(meta)
 
     # Helpers
     # -------------------------------------------------------------------------
 
-    def _maybe_schedule_previous_month(self, response: Response):
+    def _maybe_schedule_previous_week(self, response: Response):
         """
-        Revisit the advanced search page, passing the *previous month* date range via meta.
+        Revisit the advanced search page, passing the *previous week* date range via meta.
         Because some sites require a fresh form load and new tokens for each search.
         """
 
         if self.start_date >= date(2000, 1, 1):
-            prev_month_start, prev_month_end = previous_month(self.start_date)
-            if prev_month_start >= date(2000, 1, 1):
-                self.start_date = prev_month_start
-                self.end_date = prev_month_end
-                self.logger.info(f"Scheduling previous month {self.start_date} to {self.end_date}")
+            previous_week_end = self.start_date - timedelta(days=1)
+            previous_week_start = previous_week_end - timedelta(days=7)
+            if previous_week_end >= date(2000, 1, 1):
+                self.start_date = previous_week_start
+                self.end_date = previous_week_end
+                self.logger.info(f"Scheduling previous week {self.start_date} to {self.end_date}")
                 yield Request(
-                    self.start_url,
-                    callback=self._start_new_month,
-                    errback=self.handle_error,
-                    dont_filter=True,
+                    self.start_url, callback=self._start_new_period, errback=self.handle_error, dont_filter=True
                 )
 
     def get_cell_for_column_name(self, table: Selector, row: Selector, column_name: str) -> Optional[Selector]:
@@ -389,10 +383,10 @@ class IdoxSpider(BaseSpider):
         return row.xpath(f"./td[{column_index + 1}]")[0]
 
     def _get_horizontal_table_value(self, table: Selector, column_name: str):
-        texts = table.xpath(f".//th[contains(text(), '{column_name}')]/following-sibling::td/text()").get()
-        if texts:
-            return "".join(texts).strip()
-        return None
+        xpath_expr = f".//tr[th[normalize-space(text()) = '{column_name}']]/td//text()"
+        raw_text = table.xpath(xpath_expr).getall()
+        value = " ".join(t.strip() for t in raw_text if t.strip())
+        return value
 
     def _is_active(self, status: Optional[str], decision_issued_date: Optional[datetime]) -> bool:
         # if application is decided and the decision was more than 6 months ago, it is no longer active
@@ -412,7 +406,7 @@ class IdoxSpider(BaseSpider):
             "details_further_information"
         ]
         is_active = self._is_active(details_summary.decision, details_summary.decision_issued_date)
-        documents: List[PlanningApplicationDocumentsDocument] = meta["documents"]
+        documents: List[PlanningApplicationDocument] = meta["documents"]
         geometry: IdoxPlanningApplicationGeometry = meta["geometry"]
 
         item = IdoxPlanningApplicationItem(
@@ -425,9 +419,12 @@ class IdoxSpider(BaseSpider):
             address=details_summary.address,
             proposal=details_summary.proposal,
             status=details_summary.status,
+            decision=details_summary.decision,
+            decision_issued_date=details_summary.decision_issued_date,
             appeal_status=details_summary.appeal_status,
             appeal_decision=details_summary.appeal_decision,
             application_type=details_further_information.application_type,
+            actual_decision_level=details_further_information.actual_decision_level,
             expected_decision_level=details_further_information.expected_decision_level,
             case_officer=details_further_information.case_officer,
             parish=details_further_information.parish,

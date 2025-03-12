@@ -4,12 +4,10 @@ from typing import Dict, Generator, List, Optional
 
 import scrapy
 import scrapy.exceptions
-from parsel.selector import Selector
 from scrapy.http.request import Request
 from scrapy.http.response import Response
 from scrapy.http.response.text import TextResponse
 
-from planning_applications.items import applicationStatus
 from planning_applications.settings import DEFAULT_DATE_FORMAT
 from planning_applications.spiders.base import BaseSpider
 
@@ -24,7 +22,8 @@ class SmartAdminSpider(BaseSpider):
 
     start_date: date = DEFAULT_START_DATE
     end_date: date = DEFAULT_END_DATE
-    filter_status: applicationStatus = applicationStatus.ALL
+
+    not_yet_working: bool = True
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -35,16 +34,11 @@ class SmartAdminSpider(BaseSpider):
         if isinstance(self.end_date, str):
             self.end_date = datetime.strptime(self.end_date, DEFAULT_DATE_FORMAT).date()
 
-        if isinstance(self.filter_status, str):
-            self.filter_status = applicationStatus(self.filter_status)
-
         if self.start_date > self.end_date:
-            raise ValueError(f"start_date {self.start_date} must be earlier than to_date {self.end_date}")
+            raise ValueError(f"start_date {self.start_date} must be earlier than end_date {self.end_date}")
 
     def start_requests(self) -> Generator[Request, None, None]:
-        self.logger.info(
-            f"Searching for {self.name} applications between {self.start_date} and {self.end_date} with status {self.filter_status.value}"
-        )
+        self.logger.info(f"Searching for {self.name} applications between {self.start_date} and {self.end_date}")
         yield Request(self.start_url, callback=self.submit_form, errback=self.handle_error)
 
     def submit_form(self, response: Response) -> Generator[Request, None, None]:

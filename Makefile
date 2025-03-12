@@ -23,3 +23,6 @@ reset_db:
 
 run:
 	docker-compose run scraper $(lpa)
+
+run_with_external_db:
+	docker-compose run --rm --no-deps scraper $(lpa)
